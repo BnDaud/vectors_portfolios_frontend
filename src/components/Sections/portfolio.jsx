@@ -76,7 +76,7 @@ const Portfolio = ({ username, portfolio }) => {
                     backgroundSize: "100% 100%",
                   }}
                 >
-                  <div className="absolute right-5 bottom-5 ">
+                  <div className="absolute right-5 bottom-5 bg-black/40 backdrop-blur-md  p-2 rounded-lg text-white">
                     <div className="text-2xl">{p.category}</div>
                     <div> {p.name}</div>
                     <div className="text-xs mt-2 underline">Click to view</div>
@@ -99,7 +99,7 @@ const Portfolio = ({ username, portfolio }) => {
                         backgroundSize: "100% 100%",
                       }}
                     >
-                      <div className="absolute right-5 bottom-5 ">
+                      <div className="absolute right-5 bottom-5 bg-black/40 backdrop-blur-md  p-2 rounded-lg text-white">
                         <div className="text-2xl">{p.category}</div>
                         <div> {p.name}</div>
                         <div className="text-xs mt-2 underline">
