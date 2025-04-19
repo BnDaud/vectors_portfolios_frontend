@@ -44,7 +44,9 @@ const Resume = ({ username, about: { resume, school, profiency } }) => {
                   <div className="text-white font-light">
                     {" "}
                     {`${r.post} (${r.start_year.split("-")[0]} - ${
-                      r.end_year.split("-")[0]
+                      r.end_year.split("-")[0] >= new Date().getFullYear()
+                        ? "Till Date"
+                        : r.end_year.split("-")[0]
                     })`}
                   </div>
                 </div>
@@ -83,7 +85,9 @@ const Resume = ({ username, about: { resume, school, profiency } }) => {
                   <div className="text-white font-light">
                     {" "}
                     {` (${s.start_year.split("-")[0]} - ${
-                      s.end_year.split("-")[0]
+                      s.end_year.split("-")[0] >= new Date().getFullYear()
+                        ? "Till Date"
+                        : s.end_year.split("-")[0]
                     })`}
                   </div>
                 </div>
