@@ -3,10 +3,14 @@ import { GiSkills } from "react-icons/gi";
 import { AiFillExperiment } from "react-icons/ai";
 import { useState } from "react";
 
-const Resume = ({ username, about: { resume, school, profiency } }) => {
+const Resume = ({
+  username,
+  about: { resume, school, profiency, years_of_experience },
+}) => {
   const [showexperience, setShowexperience] = useState(true);
   const [showeducation, setShoweducation] = useState(false);
   const [showskill, setShowskills] = useState(false);
+  console.log(years_of_experience);
   return (
     <div className=" mt-5 bg-frame_bg mx-5 sm:mx-10">
       <h4 className="text-text_color text-center text-2xl pt-3 font-semibold">
@@ -19,8 +23,8 @@ const Resume = ({ username, about: { resume, school, profiency } }) => {
             Experience
           </p>
           <p className="mt-5 sm:text-5xl text-2xl font-bold lowercase text-white ">
-            <span className="uppercase">m</span>ore Than {7} years experience as
-            a
+            <span className="uppercase">m</span>ore Than {years_of_experience}{" "}
+            years experience as a
           </p>
           <p className="text-text_color capitalize text-5xl  font-bold leading-16">
             {" fullstack"}
