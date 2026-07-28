@@ -4,6 +4,7 @@ import { HiPencil, HiTrash } from "react-icons/hi";
 import { all_profiles_url, api_base_url, owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
 import Notyetloader from "./notyetloaded";
+import GoalsSection from "./goalsSection";
 
 const OwnerRoot = () => {
   const [profile, setProfile] = useState(null);
@@ -28,13 +29,16 @@ const OwnerRoot = () => {
       .catch((err) => console.error("Error fetching profile:", err));
   };
 
-  useEffect(() => {
-    fetchProfile();
-
+  const fetchGoals = () => {
     fetch(`${api_base_url}/goals/?username=${owner_username}`)
       .then((res) => res.json())
       .then((data) => setGoals(data))
       .catch((err) => console.error("Error fetching goals:", err));
+  };
+
+  useEffect(() => {
+    fetchProfile();
+    fetchGoals();
   }, []);
 
   if (!profile) return <Notyetloader />;
@@ -313,41 +317,14 @@ const OwnerRoot = () => {
           </div>
         )}
 
-        <div className="mt-14">
-          <h2 className="text-text_color text-2xl font-semibold text-center mb-5">
-            Goals
-          </h2>
-          {goals.length === 0 ? (
-            <p className="text-white text-center">No goals yet.</p>
-          ) : (
-            <ul className="flex flex-col gap-3 max-w-xl mx-auto">
-              {goals.map((goal) => (
-                <li
-                  key={goal.id}
-                  className="bg-frame_bg rounded-lg px-5 py-3 flex justify-between items-center"
-                >
-                  <div>
-                    <p className="text-white font-semibold">{goal.title}</p>
-                    {goal.target_date && (
-                      <p className="text-white/60 text-sm">
-                        Target: {goal.target_date}
-                      </p>
-                    )}
-                  </div>
-                  <span
-                    className={`text-xs px-3 py-1 rounded-full ${
-                      goal.status === "completed"
-                        ? "bg-green-600 text-white"
-                        : "bg-yellow-600 text-white"
-                    }`}
-                  >
-                    {goal.status === "completed" ? "Completed" : "In Progress"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+        <GoalsSection
+          goals={goals}
+          tracks={tracks}
+          onChange={() => {
+            fetchGoals();
+            fetchProfile();
+          }}
+        />
       </div>
     </div>
   );
