@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { HiTrash } from "react-icons/hi";
 import { useAuth } from "./authContext";
+import { useToast } from "./toastContext";
 
 const blankEntry = (fields) =>
   Object.fromEntries(fields.map((f) => [f.name, f.type === "number" ? 0 : ""]));
@@ -54,6 +55,7 @@ const FieldInput = ({ field, value, onChange }) => {
  */
 const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parentId, onChange }) => {
   const { authFetch } = useAuth();
+  const { showToast } = useToast();
   const [rows, setRows] = useState(entries);
   const [newEntry, setNewEntry] = useState(blankEntry(fields));
 
@@ -79,7 +81,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         if (!res.ok) throw new Error("Save failed");
         onChange();
       })
-      .catch((err) => console.error(err))
+      .catch((err) => showToast(err.message))
       .finally(() => setBusy(false));
   };
 
@@ -96,7 +98,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         setNewEntry(blankEntry(fields));
         onChange();
       })
-      .catch((err) => console.error(err))
+      .catch((err) => showToast(err.message))
       .finally(() => setBusy(false));
   };
 
@@ -112,7 +114,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         setDeleteConfirmText("");
         onChange();
       })
-      .catch((err) => console.error(err))
+      .catch((err) => showToast(err.message))
       .finally(() => setBusy(false));
   };
 

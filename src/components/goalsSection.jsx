@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { api_base_url, owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
+import { useToast } from "./toastContext";
 
 const ENTRY_TYPE_FIELDS = {
   education: [
@@ -20,13 +21,25 @@ const ENTRY_TYPE_FIELDS = {
   ],
 };
 
-const blankEntryData = (entryType) =>
-  Object.fromEntries(
-    ENTRY_TYPE_FIELDS[entryType].map((f) => [f.name, f.type === "number" ? 0 : ""])
+// Prefills start_year from when the goal was created and end_year from
+// today (the day it's marked complete), so the owner isn't forced to
+// retype dates that are already implied - still editable if wrong.
+const defaultEntryData = (entryType, goal) => {
+  const today = new Date().toISOString().slice(0, 10);
+  const goalCreated = goal.created_at ? goal.created_at.slice(0, 10) : today;
+
+  return Object.fromEntries(
+    ENTRY_TYPE_FIELDS[entryType].map((f) => {
+      if (f.name === "start_year") return [f.name, goalCreated];
+      if (f.name === "end_year") return [f.name, today];
+      return [f.name, f.type === "number" ? 0 : ""];
+    })
   );
+};
 
 const NewGoalForm = ({ onCreated }) => {
   const { authFetch } = useAuth();
+  const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -54,7 +67,7 @@ const NewGoalForm = ({ onCreated }) => {
         setOpen(false);
         onCreated();
       })
-      .catch((err) => console.error(err))
+      .catch((err) => showToast(err.message))
       .finally(() => setSubmitting(false));
   };
 
@@ -116,7 +129,7 @@ const NewGoalForm = ({ onCreated }) => {
 const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
   const { authFetch } = useAuth();
   const [entryType, setEntryType] = useState("skill");
-  const [entryData, setEntryData] = useState(blankEntryData("skill"));
+  const [entryData, setEntryData] = useState(defaultEntryData("skill", goal));
   const [certificateLink, setCertificateLink] = useState("");
   const [selectedTrackIds, setSelectedTrackIds] = useState([]);
   const [allTracks, setAllTracks] = useState(true);
@@ -128,7 +141,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
 
   const changeEntryType = (type) => {
     setEntryType(type);
-    setEntryData(blankEntryData(type));
+    setEntryData(defaultEntryData(type, goal));
   };
 
   const toggleTrack = (id) => {

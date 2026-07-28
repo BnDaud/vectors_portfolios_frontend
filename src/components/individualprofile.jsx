@@ -3,12 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { all_profiles_url, api_base_url, owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
+import { useToast } from "./toastContext";
 import Notyetloader from "./notyetloaded";
 import GoalsSection from "./goalsSection";
 
 const OwnerRoot = () => {
   const [profile, setProfile] = useState(null);
   const [goals, setGoals] = useState([]);
+  const { showToast } = useToast();
   const [showNewTrackForm, setShowNewTrackForm] = useState(false);
   const [newTrackName, setNewTrackName] = useState("");
   const [copyFrom, setCopyFrom] = useState("");
@@ -97,7 +99,7 @@ const OwnerRoot = () => {
         return res.json();
       })
       .then(() => fetchProfile())
-      .catch((err) => console.error(err));
+      .catch((err) => showToast(err.message));
   };
 
   const openDeleteModal = (e, track) => {
@@ -117,7 +119,7 @@ const OwnerRoot = () => {
         setDeleteConfirmText("");
         fetchProfile();
       })
-      .catch((err) => console.error(err))
+      .catch((err) => showToast(err.message))
       .finally(() => setDeleting(false));
   };
 

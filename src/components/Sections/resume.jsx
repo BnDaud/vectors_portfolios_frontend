@@ -10,7 +10,18 @@ const Resume = ({
   const [showexperience, setShowexperience] = useState(true);
   const [showeducation, setShoweducation] = useState(false);
   const [showskill, setShowskills] = useState(false);
-  console.log(years_of_experience);
+
+  const CertificateThumb = ({ link }) =>
+    link ? (
+      <a href={link} target="_blank" rel="noopener noreferrer" className="shrink-0">
+        <img
+          src={link}
+          alt="Certificate"
+          className="w-10 h-10 rounded object-cover border border-white/20 hover:scale-110 transition-transform"
+        />
+      </a>
+    ) : null;
+
   return (
     <div className=" mt-5 bg-frame_bg mx-5 sm:mx-10">
       <h4 className="text-text_color text-center text-2xl pt-3 font-semibold">
@@ -40,19 +51,22 @@ const Resume = ({
             return (
               <li key={r.id} className="flex gap-2 mb-2 items-baseline">
                 <div className="w-4 h-4 rounded-full bg-white -ml-2"></div>
-                <div>
-                  {" "}
-                  <div className="text-white font-semibold capitalize text-xl">
-                    {r.company_name}
-                  </div>{" "}
-                  <div className="text-white font-light">
+                <div className="flex items-center gap-2">
+                  <div>
                     {" "}
-                    {`${r.post} (${r.start_year.split("-")[0]} - ${
-                      r.end_year.split("-")[0] >= new Date().getFullYear()
-                        ? "Till Date"
-                        : r.end_year.split("-")[0]
-                    })`}
+                    <div className="text-white font-semibold capitalize text-xl">
+                      {r.company_name}
+                    </div>{" "}
+                    <div className="text-white font-light">
+                      {" "}
+                      {`${r.post} (${r.start_year.split("-")[0]} - ${
+                        r.end_year.split("-")[0] >= new Date().getFullYear()
+                          ? "Till Date"
+                          : r.end_year.split("-")[0]
+                      })`}
+                    </div>
                   </div>
+                  <CertificateThumb link={r.certificate_link} />
                 </div>
               </li>
             );
@@ -81,19 +95,22 @@ const Resume = ({
             return (
               <li key={s.id} className="flex gap-2 mb-2 items-baseline">
                 <div className="w-4 h-4 rounded-full bg-white -ml-2"></div>
-                <div>
-                  {" "}
-                  <div className="text-white font-semibold capitalize text-xl">
-                    {s.school_name}
-                  </div>{" "}
-                  <div className="text-white font-light">
+                <div className="flex items-center gap-2">
+                  <div>
                     {" "}
-                    {` (${s.start_year.split("-")[0]} - ${
-                      s.end_year.split("-")[0] >= new Date().getFullYear()
-                        ? "Till Date"
-                        : s.end_year.split("-")[0]
-                    })`}
+                    <div className="text-white font-semibold capitalize text-xl">
+                      {s.school_name}
+                    </div>{" "}
+                    <div className="text-white font-light">
+                      {" "}
+                      {` (${s.start_year.split("-")[0]} - ${
+                        s.end_year.split("-")[0] >= new Date().getFullYear()
+                          ? "Till Date"
+                          : s.end_year.split("-")[0]
+                      })`}
+                    </div>
                   </div>
+                  <CertificateThumb link={s.certificate_link} />
                 </div>
               </li>
             );
@@ -129,10 +146,13 @@ const Resume = ({
             {proficiency.map((p) => {
               return (
                 <Fragment key={p.id}>
-                  <p className="text-white font-light text-sm">
-                    {" "}
-                    {p.skill_name}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-white font-light text-sm">
+                      {" "}
+                      {p.skill_name}
+                    </p>
+                    <CertificateThumb link={p.certificate_link} />
+                  </div>
                   <div className="relative w-full md:w-72 lg:w-96 h-2 my-3 bg-gray-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r   from-new_color to-text_color transition-all duration-500"
