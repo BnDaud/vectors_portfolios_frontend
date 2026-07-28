@@ -48,6 +48,7 @@ const Portfolio = ({ username, portfolio }) => {
           {categories.map((p) => {
             return (
               <p
+                key={p}
                 className={`text-sm cursor-pointer ${
                   display === p ? "text-text_color " : "text-white"
                 }`}
@@ -67,6 +68,7 @@ const Portfolio = ({ username, portfolio }) => {
           ? portfolio.map((p) => {
               return (
                 <a
+                  key={p.id}
                   href={p.project_link}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -86,7 +88,7 @@ const Portfolio = ({ username, portfolio }) => {
             })
           : portfolio.map((p) => {
               return (
-                <div className="pb-5">
+                <div key={p.id} className="pb-5">
                   {" "}
                   {p.category === display ? (
                     <a

@@ -1,7 +1,7 @@
 import { IoSchool } from "react-icons/io5";
 import { GiSkills } from "react-icons/gi";
 import { AiFillExperiment } from "react-icons/ai";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 
 const Resume = ({
   username,
@@ -38,7 +38,7 @@ const Resume = ({
         >
           {resume.map((r) => {
             return (
-              <li className="flex gap-2 mb-2 items-baseline">
+              <li key={r.id} className="flex gap-2 mb-2 items-baseline">
                 <div className="w-4 h-4 rounded-full bg-white -ml-2"></div>
                 <div>
                   {" "}
@@ -79,7 +79,7 @@ const Resume = ({
         >
           {school.map((s) => {
             return (
-              <li className="flex gap-2 mb-2 items-baseline">
+              <li key={s.id} className="flex gap-2 mb-2 items-baseline">
                 <div className="w-4 h-4 rounded-full bg-white -ml-2"></div>
                 <div>
                   {" "}
@@ -128,7 +128,7 @@ const Resume = ({
             Professional Skill
             {proficiency.map((p) => {
               return (
-                <>
+                <Fragment key={p.id}>
                   <p className="text-white font-light text-sm">
                     {" "}
                     {p.skill_name}
@@ -139,7 +139,7 @@ const Resume = ({
                       style={{ width: `${p.skill_range}%` }}
                     ></div>
                   </div>
-                </>
+                </Fragment>
               );
             })}
           </div>
