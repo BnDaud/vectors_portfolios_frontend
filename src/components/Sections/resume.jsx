@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const Resume = ({
   username,
-  about: { resume, school, profiency, years_of_experience },
+  about: { resume, school, proficiency, years_of_experience },
 }) => {
   const [showexperience, setShowexperience] = useState(true);
   const [showeducation, setShoweducation] = useState(false);
@@ -126,7 +126,7 @@ const Resume = ({
           <div className="text-white capitalize text-xl font-bold w-full">
             {" "}
             Professional Skill
-            {profiency.map((p) => {
+            {proficiency.map((p) => {
               return (
                 <>
                   <p className="text-white font-light text-sm">
