@@ -30,6 +30,18 @@
   }
 }
 
+html {
+  /* Scales every rem-based Tailwind utility (text size, spacing) down to
+     ~80% uniformly, instead of a lossy zoom/transform:scale hack. */
+  font-size: 80%;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   background-color: var(--color-body_bg);
   color: var(--color-fg);
