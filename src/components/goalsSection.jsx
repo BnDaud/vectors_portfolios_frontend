@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HiTrash } from "react-icons/hi";
 import { api_base_url, owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
@@ -322,8 +323,27 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
 };
 
 const GoalsSection = ({ goals, tracks, onChange }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, authFetch } = useAuth();
+  const { showToast } = useToast();
   const [completingGoal, setCompletingGoal] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const confirmDelete = () => {
+    if (!deleteTarget || deleteConfirmText !== deleteTarget.title) return;
+
+    setDeleting(true);
+    authFetch(`${api_base_url}/goals/${deleteTarget.id}`, { method: "DELETE" })
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to delete goal");
+        setDeleteTarget(null);
+        setDeleteConfirmText("");
+        onChange();
+      })
+      .catch((err) => showToast(err.message))
+      .finally(() => setDeleting(false));
+  };
 
   return (
     <div className="mt-14">
@@ -365,6 +385,19 @@ const GoalsSection = ({ goals, tracks, onChange }) => {
                     Mark Complete
                   </button>
                 )}
+                {isAuthenticated && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeleteTarget(goal);
+                      setDeleteConfirmText("");
+                    }}
+                    className="text-fg/60 hover:text-red-500"
+                    aria-label="Delete goal"
+                  >
+                    <HiTrash />
+                  </button>
+                )}
               </div>
             </li>
           ))}
@@ -378,6 +411,47 @@ const GoalsSection = ({ goals, tracks, onChange }) => {
           onClose={() => setCompletingGoal(null)}
           onCompleted={onChange}
         />
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-5">
+          <div className="bg-frame_bg rounded-xl p-6 max-w-md w-full flex flex-col gap-4 border border-frame_border">
+            <h3 className="text-text_color text-lg font-semibold">
+              Delete "{deleteTarget.title}"
+            </h3>
+            <p className="text-fg text-sm">
+              This cannot be undone. Type{" "}
+              <span className="font-semibold">{deleteTarget.title}</span> to confirm.
+            </p>
+            <input
+              type="text"
+              autoFocus
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  setDeleteTarget(null);
+                  setDeleteConfirmText("");
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={deleteConfirmText !== deleteTarget.title || deleting}
+                onClick={confirmDelete}
+                className="bg-red-600 text-white font-semibold px-4 py-2 rounded-full disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
