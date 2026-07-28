@@ -1,7 +1,8 @@
 import { IoSchool } from "react-icons/io5";
 import { GiSkills } from "react-icons/gi";
-import { AiFillExperiment } from "react-icons/ai";
+import { FaBriefcase } from "react-icons/fa";
 import { Fragment, useState } from "react";
+import { motion } from "framer-motion";
 
 const Resume = ({
   username,
@@ -17,14 +18,19 @@ const Resume = ({
         <img
           src={link}
           alt="Certificate"
-          className="w-10 h-10 rounded object-cover border border-white/20 hover:scale-110 transition-transform"
+          className="w-10 h-10 rounded object-cover border border-fg/20 hover:scale-110 transition-transform"
         />
       </a>
     ) : null;
 
   return (
-    <div className=" mt-5 bg-frame_bg mx-5 sm:mx-10">
-      <h4 className="text-text_color text-center text-2xl pt-3 font-semibold">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="mt-5 bg-frame_bg border border-frame_border rounded-2xl shadow-xl mx-5 sm:mx-10 pb-6"
+    >
+      <h4 className="text-text_color text-center text-2xl pt-6 font-semibold">
         My Resume
       </h4>
       {/*  show experience */}
@@ -33,7 +39,7 @@ const Resume = ({
           <p className=" text-text_color text-xl uppercase leading-5 ">
             Experience
           </p>
-          <p className="mt-5 sm:text-5xl text-2xl font-bold lowercase text-white ">
+          <p className="mt-5 sm:text-5xl text-2xl font-bold lowercase text-fg ">
             <span className="uppercase">m</span>ore Than {years_of_experience}{" "}
             years experience as a
           </p>
@@ -45,19 +51,19 @@ const Resume = ({
         <ul
           className={`${
             showexperience ? "block" : "hidden"
-          }  list-none  min-h-40 mb-5  border-l-2 border-l-white`}
+          }  list-none  min-h-40 mb-5  border-l-2 border-l-fg`}
         >
           {resume.map((r) => {
             return (
               <li key={r.id} className="flex gap-2 mb-2 items-baseline">
-                <div className="w-4 h-4 rounded-full bg-white -ml-2"></div>
+                <div className="w-4 h-4 rounded-full bg-fg -ml-2"></div>
                 <div className="flex items-center gap-2">
                   <div>
                     {" "}
-                    <div className="text-white font-semibold capitalize text-xl">
+                    <div className="text-fg font-semibold capitalize text-xl">
                       {r.company_name}
                     </div>{" "}
-                    <div className="text-white font-light">
+                    <div className="text-fg font-light">
                       {" "}
                       {`${r.post} (${r.start_year.split("-")[0]} - ${
                         r.end_year.split("-")[0] >= new Date().getFullYear()
@@ -78,7 +84,7 @@ const Resume = ({
           <p className=" text-text_color text-xl uppercase leading-5 ">
             Education
           </p>
-          <p className="mt-5 sm:text-5xl text-2xl font-bold lowercase text-white ">
+          <p className="mt-5 sm:text-5xl text-2xl font-bold lowercase text-fg ">
             <span className="uppercase">l</span>earning experiences in a few
             <span className="text-text_color capitalize text-5xl  font-bold leading-16">
               {" professional institution"}
@@ -89,19 +95,19 @@ const Resume = ({
         <ul
           className={`${
             showeducation ? "block" : "hidden"
-          }  list-none  min-h-40 mb-5  border-l-2 border-l-white`}
+          }  list-none  min-h-40 mb-5  border-l-2 border-l-fg`}
         >
           {school.map((s) => {
             return (
               <li key={s.id} className="flex gap-2 mb-2 items-baseline">
-                <div className="w-4 h-4 rounded-full bg-white -ml-2"></div>
+                <div className="w-4 h-4 rounded-full bg-fg -ml-2"></div>
                 <div className="flex items-center gap-2">
                   <div>
                     {" "}
-                    <div className="text-white font-semibold capitalize text-xl">
+                    <div className="text-fg font-semibold capitalize text-xl">
                       {s.school_name}
                     </div>{" "}
-                    <div className="text-white font-light">
+                    <div className="text-fg font-light">
                       {" "}
                       {` (${s.start_year.split("-")[0]} - ${
                         s.end_year.split("-")[0] >= new Date().getFullYear()
@@ -124,8 +130,8 @@ const Resume = ({
             Skills
           </p>
           <p className="mt-5 sm:text-5xl text-2xl font-bold lowercase text-text_color ">
-            <span className="text-white capitalize">W</span>
-            <span className="text-white ">ith good </span> Personnal
+            <span className="text-fg capitalize">W</span>
+            <span className="text-fg ">ith good </span> Personnal
           </p>
           <p className="mt-5 sm:text-5xl text-2xl font-bold  text-text_color">
             and Professional{" "}
@@ -139,25 +145,27 @@ const Resume = ({
             showskill ? "block" : "hidden"
           }`}
         >
-          <div className="bg-white h-4 w-4 rounded-full"> </div>
-          <div className="text-white capitalize text-xl font-bold w-full">
+          <div className="bg-fg h-4 w-4 rounded-full"> </div>
+          <div className="text-fg capitalize text-xl font-bold w-full">
             {" "}
             Professional Skill
             {proficiency.map((p) => {
               return (
                 <Fragment key={p.id}>
                   <div className="flex items-center gap-2">
-                    <p className="text-white font-light text-sm">
+                    <p className="text-fg font-light text-sm">
                       {" "}
                       {p.skill_name}
                     </p>
                     <CertificateThumb link={p.certificate_link} />
                   </div>
                   <div className="relative w-full md:w-72 lg:w-96 h-2 my-3 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r   from-new_color to-text_color transition-all duration-500"
-                      style={{ width: `${p.skill_range}%` }}
-                    ></div>
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-new_color to-text_color"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${p.skill_range}%` }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                    />
                   </div>
                 </Fragment>
               );
@@ -165,39 +173,57 @@ const Resume = ({
           </div>
         </div>
       </div>
-      <div className="flex justify-center gap-4 mt-5">
-        <AiFillExperiment
-          className={`cursor-pointer text-2xl mb-3 ${
-            showexperience ? "text-text_color" : "text-white "
+      <div className="flex justify-center gap-3 mt-5">
+        <button
+          type="button"
+          aria-label="Show experience"
+          className={`p-3 rounded-full transition-colors ${
+            showexperience
+              ? "bg-text_color text-body_bg"
+              : "bg-body_bg text-fg hover:text-text_color"
           }`}
           onClick={() => {
             setShowexperience(true);
             setShoweducation(false);
             setShowskills(false);
           }}
-        />
-        <IoSchool
-          className={`cursor-pointer text-2xl mb-3 ${
-            showeducation ? "text-text_color" : "text-white "
+        >
+          <FaBriefcase className="text-xl" />
+        </button>
+        <button
+          type="button"
+          aria-label="Show education"
+          className={`p-3 rounded-full transition-colors ${
+            showeducation
+              ? "bg-text_color text-body_bg"
+              : "bg-body_bg text-fg hover:text-text_color"
           }`}
           onClick={() => {
             setShowexperience(false);
             setShoweducation(true);
             setShowskills(false);
           }}
-        />
-        <GiSkills
-          className={`cursor-pointer text-2xl mb-3 ${
-            showskill ? "text-text_color" : "text-white "
+        >
+          <IoSchool className="text-xl" />
+        </button>
+        <button
+          type="button"
+          aria-label="Show skills"
+          className={`p-3 rounded-full transition-colors ${
+            showskill
+              ? "bg-text_color text-body_bg"
+              : "bg-body_bg text-fg hover:text-text_color"
           }`}
           onClick={() => {
             setShowexperience(false);
             setShoweducation(false);
             setShowskills(true);
           }}
-        />
+        >
+          <GiSkills className="text-xl" />
+        </button>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

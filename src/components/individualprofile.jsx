@@ -6,6 +6,7 @@ import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
 import Notyetloader from "./notyetloaded";
 import GoalsSection from "./goalsSection";
+import ThemeToggle from "./themeToggle";
 
 const OwnerRoot = () => {
   const [profile, setProfile] = useState(null);
@@ -129,19 +130,22 @@ const OwnerRoot = () => {
         <p className="bg-gradient-to-r from-text_color to-new_color bg-clip-text text-transparent text-2xl sm:text-3xl font-bold">
           Vectored Matrix
         </p>
-        {isAuthenticated ? (
-          <button
-            type="button"
-            onClick={logout}
-            className="text-white/70 hover:text-text_color text-sm"
-          >
-            Logout ({username})
-          </button>
-        ) : (
-          <Link to="/login" className="text-white/70 hover:text-text_color text-sm">
-            Login
-          </Link>
-        )}
+        <div className="flex items-center gap-4">
+          <ThemeToggle />
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={logout}
+              className="text-fg/70 hover:text-text_color text-sm"
+            >
+              Logout ({username})
+            </button>
+          ) : (
+            <Link to="/login" className="text-fg/70 hover:text-text_color text-sm">
+              Login
+            </Link>
+          )}
+        </div>
       </nav>
 
       <div className="mt-5 mx-5 sm:mx-10 pb-10">
@@ -154,14 +158,14 @@ const OwnerRoot = () => {
           <h1 className="text-text_color text-3xl font-bold">
             {profile.user.first_name} {profile.user.last_name}
           </h1>
-          <p className="text-white mt-2">Choose a portfolio to view</p>
+          <p className="text-fg mt-2">Choose a portfolio to view</p>
         </div>
 
         <div className="flex flex-wrap gap-6 justify-center">
           {tracks.map((track) => (
             <div
               key={track.id}
-              className="relative bg-frame_bg rounded-xl p-6 w-64 flex flex-col items-center text-center hover:cursor-pointer hover:scale-105 transition-transform"
+              className="relative bg-frame_bg border border-frame_border rounded-xl p-6 w-64 flex flex-col items-center text-center hover:cursor-pointer hover:scale-105 hover:shadow-[0_0_24px_-4px_var(--color-text_color)] hover:border-text_color/40 transition-all"
               onClick={() => navigate(`/${track.slug}`)}
             >
               {isAuthenticated && (
@@ -169,7 +173,7 @@ const OwnerRoot = () => {
                   <button
                     type="button"
                     onClick={(e) => startRename(e, track)}
-                    className="text-white/60 hover:text-text_color"
+                    className="text-fg/60 hover:text-text_color"
                     aria-label="Rename portfolio"
                   >
                     <HiPencil />
@@ -178,7 +182,7 @@ const OwnerRoot = () => {
                     <button
                       type="button"
                       onClick={(e) => openDeleteModal(e, track)}
-                      className="text-white/60 hover:text-red-500"
+                      className="text-fg/60 hover:text-red-500"
                       aria-label="Delete portfolio"
                     >
                       <HiTrash />
@@ -206,17 +210,17 @@ const OwnerRoot = () => {
                   {track.name}
                 </h3>
               )}
-              <p className="text-white text-sm mt-2">{track.about?.skill}</p>
+              <p className="text-fg text-sm mt-2">{track.about?.skill}</p>
             </div>
           ))}
 
           {isAuthenticated && (
             <div
-              className="border-2 border-dashed border-text_color/50 rounded-xl p-6 w-64 flex flex-col items-center justify-center text-center hover:cursor-pointer hover:scale-105 transition-transform"
+              className="border-2 border-dashed border-text_color/50 rounded-xl p-6 w-64 flex flex-col items-center justify-center text-center hover:cursor-pointer hover:scale-105 hover:border-text_color transition-all"
               onClick={() => setShowNewTrackForm(true)}
             >
               <span className="text-text_color text-4xl leading-none">+</span>
-              <p className="text-white text-sm mt-2">New Portfolio</p>
+              <p className="text-fg text-sm mt-2">New Portfolio</p>
             </div>
           )}
         </div>
@@ -235,7 +239,7 @@ const OwnerRoot = () => {
               placeholder="e.g. Cybersecurity"
               value={newTrackName}
               onChange={(e) => setNewTrackName(e.target.value)}
-              className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+              className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
               required
             />
 
@@ -243,7 +247,7 @@ const OwnerRoot = () => {
               <select
                 value={copyFrom}
                 onChange={(e) => setCopyFrom(e.target.value)}
-                className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+                className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
               >
                 <option value="">Start blank</option>
                 {tracks.map((track) => (
@@ -261,7 +265,7 @@ const OwnerRoot = () => {
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
-                className="text-white px-4 py-2 rounded"
+                className="btn-ghost"
                 onClick={() => setShowNewTrackForm(false)}
               >
                 Cancel
@@ -269,7 +273,7 @@ const OwnerRoot = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="bg-text_color text-body_bg font-semibold px-4 py-2 rounded disabled:opacity-50"
+                className="btn-primary disabled:opacity-50"
               >
                 {submitting ? "Creating..." : "Create"}
               </button>
@@ -283,7 +287,7 @@ const OwnerRoot = () => {
               <h3 className="text-text_color text-lg font-semibold">
                 Delete "{deleteTarget.name}"
               </h3>
-              <p className="text-white text-sm">
+              <p className="text-fg text-sm">
                 This cannot be undone. Type{" "}
                 <span className="font-semibold">{deleteTarget.name}</span> to
                 confirm.
@@ -293,12 +297,12 @@ const OwnerRoot = () => {
                 autoFocus
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
-                className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+                className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
               />
               <div className="flex gap-3 justify-end">
                 <button
                   type="button"
-                  className="text-white px-4 py-2 rounded"
+                  className="btn-ghost"
                   onClick={() => {
                     setDeleteTarget(null);
                     setDeleteConfirmText("");
@@ -310,7 +314,7 @@ const OwnerRoot = () => {
                   type="button"
                   disabled={deleteConfirmText !== deleteTarget.name || deleting}
                   onClick={confirmDelete}
-                  className="bg-red-600 text-white font-semibold px-4 py-2 rounded disabled:opacity-50"
+                  className="bg-red-600 text-fg font-semibold px-4 py-2 rounded disabled:opacity-50"
                 >
                   {deleting ? "Deleting..." : "Delete"}
                 </button>

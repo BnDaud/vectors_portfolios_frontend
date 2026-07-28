@@ -36,7 +36,7 @@ const Login = () => {
           placeholder="Username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+          className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
           required
         />
         <input
@@ -44,7 +44,7 @@ const Login = () => {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+          className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
           required
         />
 
@@ -53,7 +53,7 @@ const Login = () => {
         <button
           type="submit"
           disabled={submitting}
-          className="bg-text_color text-body_bg font-semibold px-4 py-2 rounded disabled:opacity-50"
+          className="btn-primary disabled:opacity-50"
         >
           {submitting ? "Logging in..." : "Login"}
         </button>

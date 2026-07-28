@@ -95,29 +95,34 @@ const NewGoalForm = ({ onCreated }) => {
         placeholder="Goal title (e.g. AWS Diploma)"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+        className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
         required
       />
       <textarea
         placeholder="Description (optional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+        className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
       />
-      <input
-        type="date"
-        value={targetDate}
-        onChange={(e) => setTargetDate(e.target.value)}
-        className="bg-body_bg text-white rounded px-3 py-2 outline-none"
-      />
+      <div className="flex flex-col gap-1">
+        <label className="text-fg/60 text-xs">
+          Target date (when you plan to complete this, not a start date)
+        </label>
+        <input
+          type="date"
+          value={targetDate}
+          onChange={(e) => setTargetDate(e.target.value)}
+          className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
+        />
+      </div>
       <div className="flex gap-3 justify-end">
-        <button type="button" className="text-white px-4 py-2 rounded" onClick={() => setOpen(false)}>
+        <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
           Cancel
         </button>
         <button
           type="submit"
           disabled={submitting}
-          className="bg-text_color text-body_bg font-semibold px-4 py-2 rounded disabled:opacity-50"
+          className="btn-primary disabled:opacity-50"
         >
           {submitting ? "Creating..." : "Create"}
         </button>
@@ -193,11 +198,11 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
         </h3>
 
         <div className="flex flex-col gap-1">
-          <label className="text-white/60 text-xs">What did this achieve?</label>
+          <label className="text-fg/60 text-xs">What did this achieve?</label>
           <select
             value={entryType}
             onChange={(e) => changeEntryType(e.target.value)}
-            className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
           >
             <option value="education">Education</option>
             <option value="experience">Experience</option>
@@ -207,7 +212,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
 
         {ENTRY_TYPE_FIELDS[entryType].map((f) => (
           <div key={f.name} className="flex flex-col gap-1">
-            <label className="text-white/60 text-xs">{f.label}</label>
+            <label className="text-fg/60 text-xs">{f.label}</label>
             <input
               type={f.type}
               value={entryData[f.name]}
@@ -217,23 +222,23 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
                   [f.name]: f.type === "number" ? Number(e.target.value) : e.target.value,
                 }))
               }
-              className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+              className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
             />
           </div>
         ))}
 
         <div className="flex flex-col gap-1">
-          <label className="text-white/60 text-xs">Certificate link (optional)</label>
+          <label className="text-fg/60 text-xs">Certificate link (optional)</label>
           <input
             type="text"
             value={certificateLink}
             onChange={(e) => setCertificateLink(e.target.value)}
-            className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
           />
         </div>
 
-        <div className="border-t border-white/10 pt-3">
-          <label className="flex items-center gap-2 text-white text-sm mb-2">
+        <div className="border-t border-fg/10 pt-3">
+          <label className="flex items-center gap-2 text-fg text-sm mb-2">
             <input
               type="checkbox"
               checked={newTrackMode}
@@ -249,13 +254,13 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
                 placeholder="New portfolio name (e.g. Cybersecurity)"
                 value={newTrackName}
                 onChange={(e) => setNewTrackName(e.target.value)}
-                className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+                className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
                 required={newTrackMode}
               />
               <select
                 value={copyFrom}
                 onChange={(e) => setCopyFrom(e.target.value)}
-                className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+                className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
               >
                 <option value="">Start blank</option>
                 {tracks.map((t) => (
@@ -267,7 +272,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              <label className="flex items-center gap-2 text-white text-sm">
+              <label className="flex items-center gap-2 text-fg text-sm">
                 <input
                   type="checkbox"
                   checked={allTracks}
@@ -278,7 +283,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
               {!allTracks && (
                 <div className="flex flex-col gap-1 pl-5">
                   {tracks.map((t) => (
-                    <label key={t.id} className="flex items-center gap-2 text-white text-sm">
+                    <label key={t.id} className="flex items-center gap-2 text-fg text-sm">
                       <input
                         type="checkbox"
                         checked={selectedTrackIds.includes(t.id)}
@@ -296,7 +301,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
         {error && <p className="text-red-500 text-sm">{error}</p>}
 
         <div className="flex gap-3 justify-end">
-          <button type="button" className="text-white px-4 py-2 rounded" onClick={onClose}>
+          <button type="button" className="btn-ghost" onClick={onClose}>
             Cancel
           </button>
           <button
@@ -306,7 +311,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
               (newTrackMode && !newTrackName.trim()) ||
               (!newTrackMode && !allTracks && selectedTrackIds.length === 0)
             }
-            className="bg-text_color text-body_bg font-semibold px-4 py-2 rounded disabled:opacity-50"
+            className="btn-primary disabled:opacity-50"
           >
             {submitting ? "Completing..." : "Complete Goal"}
           </button>
@@ -327,7 +332,7 @@ const GoalsSection = ({ goals, tracks, onChange }) => {
       {isAuthenticated && <NewGoalForm onCreated={onChange} />}
 
       {goals.length === 0 ? (
-        <p className="text-white text-center">No goals yet.</p>
+        <p className="text-fg text-center">No goals yet.</p>
       ) : (
         <ul className="flex flex-col gap-3 max-w-xl mx-auto">
           {goals.map((goal) => (
@@ -336,17 +341,17 @@ const GoalsSection = ({ goals, tracks, onChange }) => {
               className="bg-frame_bg rounded-lg px-5 py-3 flex justify-between items-center gap-3"
             >
               <div>
-                <p className="text-white font-semibold">{goal.title}</p>
+                <p className="text-fg font-semibold">{goal.title}</p>
                 {goal.target_date && (
-                  <p className="text-white/60 text-sm">Target: {goal.target_date}</p>
+                  <p className="text-fg/60 text-sm">Target: {goal.target_date}</p>
                 )}
               </div>
               <div className="flex items-center gap-3">
                 <span
                   className={`text-xs px-3 py-1 rounded-full ${
                     goal.status === "completed"
-                      ? "bg-green-600 text-white"
-                      : "bg-yellow-600 text-white"
+                      ? "bg-green-600 text-fg"
+                      : "bg-yellow-600 text-fg"
                   }`}
                 >
                   {goal.status === "completed" ? "Completed" : "In Progress"}

@@ -4,6 +4,7 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import TrackProfile from "./trackprofile";
 import { owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
+import ThemeToggle from "./themeToggle";
 
 const Template = () => {
   const { trackSlug } = useParams();
@@ -39,17 +40,18 @@ const Template = () => {
         </p>
 
         {/* Mobile Menu Toggle */}
-        <div className="sm:hidden">
+        <div className="sm:hidden flex items-center gap-4">
+          <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-white text-3xl"
+            className="text-fg text-3xl"
           >
             {isMobileMenuOpen ? <HiX /> : <HiMenu />}
           </button>
         </div>
 
         {/* Nav Links - Desktop */}
-        <div className="hidden sm:flex gap-6 items-center text-white pr-4">
+        <div className="hidden sm:flex gap-6 items-center text-fg pr-4">
           {["home", "about", "resume", "portfolio", "contact"].map(
             (section) => (
               <p
@@ -61,16 +63,17 @@ const Template = () => {
               </p>
             )
           )}
+          <ThemeToggle />
           {isAuthenticated ? (
             <button
               type="button"
               onClick={logout}
-              className="text-white/70 hover:text-text_color text-sm"
+              className="text-fg/70 hover:text-text_color text-sm"
             >
               Logout ({username})
             </button>
           ) : (
-            <Link to="/login" className="text-white/70 hover:text-text_color text-sm">
+            <Link to="/login" className="text-fg/70 hover:text-text_color text-sm">
               Login
             </Link>
           )}
@@ -79,7 +82,7 @@ const Template = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="sm:hidden fixed top-16 left-0 w-full bg-frame_bg/90 z-40 py-5 px-6 space-y-4 text-white shadow-md">
+        <div className="sm:hidden fixed top-16 left-0 w-full bg-frame_bg/90 z-40 py-5 px-6 space-y-4 text-fg shadow-md">
           {["home", "about", "resume", "portfolio", "contact"].map(
             (section) => (
               <p
@@ -90,6 +93,15 @@ const Template = () => {
                 {section.charAt(0).toUpperCase() + section.slice(1)}
               </p>
             )
+          )}
+          {isAuthenticated ? (
+            <p className="text-lg hover:cursor-pointer" onClick={logout}>
+              Logout ({username})
+            </p>
+          ) : (
+            <Link to="/login" className="block text-lg">
+              Login
+            </Link>
           )}
         </div>
       )}

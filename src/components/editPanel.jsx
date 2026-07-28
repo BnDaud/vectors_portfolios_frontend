@@ -91,14 +91,14 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
       <div className="grid sm:grid-cols-2 gap-3">
         {PROFILE_FIELDS.map((f) => (
           <div key={f.name} className="flex flex-col gap-1">
-            <label className="text-white/60 text-xs">{f.label}</label>
+            <label className="text-fg/60 text-xs">{f.label}</label>
             <input
               type="text"
               value={profileData[f.name]}
               onChange={(e) =>
                 setProfileData((prev) => ({ ...prev, [f.name]: e.target.value }))
               }
-              className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+              className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
             />
           </div>
         ))}
@@ -106,16 +106,16 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
 
       <div className="grid sm:grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-white/60 text-xs">Skill / headline</label>
+          <label className="text-fg/60 text-xs">Skill / headline</label>
           <input
             type="text"
             value={aboutData.skill}
             onChange={(e) => setAboutData((prev) => ({ ...prev, skill: e.target.value }))}
-            className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-white/60 text-xs">
+          <label className="text-fg/60 text-xs">
             Experience since (years of experience auto-updates from this every year)
           </label>
           <input
@@ -124,25 +124,25 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
             onChange={(e) =>
               setAboutData((prev) => ({ ...prev, experience_since: e.target.value }))
             }
-            className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
           />
         </div>
         <div className="flex flex-col gap-1 sm:col-span-2">
-          <label className="text-white/60 text-xs">About image URL</label>
+          <label className="text-fg/60 text-xs">About image URL</label>
           <input
             type="text"
             value={aboutData.image_link}
             onChange={(e) => setAboutData((prev) => ({ ...prev, image_link: e.target.value }))}
-            className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
           />
         </div>
         <div className="flex flex-col gap-1 sm:col-span-2">
-          <label className="text-white/60 text-xs">Description</label>
+          <label className="text-fg/60 text-xs">Description</label>
           <textarea
             rows={4}
             value={aboutData.description}
             onChange={(e) => setAboutData((prev) => ({ ...prev, description: e.target.value }))}
-            className="bg-body_bg text-white rounded px-2 py-1 outline-none"
+            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
           />
         </div>
       </div>
@@ -152,7 +152,7 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
       <button
         type="submit"
         disabled={saving}
-        className="bg-text_color text-body_bg font-semibold px-4 py-2 rounded self-start disabled:opacity-50"
+        className="btn-primary self-start disabled:opacity-50"
       >
         {saving ? "Saving..." : "Save Profile & About"}
       </button>

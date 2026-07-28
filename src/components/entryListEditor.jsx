@@ -12,7 +12,7 @@ const FieldInput = ({ field, value, onChange }) => {
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
-        className="bg-body_bg text-white rounded px-2 py-1 outline-none flex-1 min-w-0"
+        className="bg-body_bg text-fg rounded px-2 py-1 outline-none flex-1 min-w-0"
       >
         {field.options.map((opt) => (
           <option key={opt} value={opt}>
@@ -32,7 +32,7 @@ const FieldInput = ({ field, value, onChange }) => {
         max={field.max}
         value={value ?? 0}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="bg-body_bg text-white rounded px-2 py-1 outline-none w-20"
+        className="bg-body_bg text-fg rounded px-2 py-1 outline-none w-20"
       />
     );
   }
@@ -43,7 +43,7 @@ const FieldInput = ({ field, value, onChange }) => {
       placeholder={field.label}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value)}
-      className="bg-body_bg text-white rounded px-2 py-1 outline-none flex-1 min-w-0"
+      className="bg-body_bg text-fg rounded px-2 py-1 outline-none flex-1 min-w-0"
     />
   );
 };
@@ -147,7 +147,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
                 setDeleteTarget(row);
                 setDeleteConfirmText("");
               }}
-              className="text-white/60 hover:text-red-500"
+              className="text-fg/60 hover:text-red-500"
               aria-label={`Delete ${title} entry`}
             >
               <HiTrash />
@@ -156,7 +156,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         ))}
       </div>
 
-      <form onSubmit={addRow} className="flex flex-wrap gap-2 items-center mt-4 border-t border-white/10 pt-4">
+      <form onSubmit={addRow} className="flex flex-wrap gap-2 items-center mt-4 border-t border-fg/10 pt-4">
         {fields.map((field) => (
           <FieldInput
             key={field.name}
@@ -168,7 +168,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         <button
           type="submit"
           disabled={busy}
-          className="bg-text_color text-body_bg font-semibold text-sm px-3 py-1 rounded"
+          className="btn-primary text-sm py-1 px-3"
         >
           + Add
         </button>
@@ -176,11 +176,11 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
 
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-5">
-          <div className="bg-frame_bg rounded-xl p-6 max-w-md w-full flex flex-col gap-4 border border-white/10">
+          <div className="bg-frame_bg rounded-xl p-6 max-w-md w-full flex flex-col gap-4 border border-fg/10">
             <h3 className="text-text_color text-lg font-semibold">
               Delete "{deleteTarget[fields[0].name]}"
             </h3>
-            <p className="text-white text-sm">
+            <p className="text-fg text-sm">
               This cannot be undone. Type{" "}
               <span className="font-semibold">{deleteTarget[fields[0].name]}</span> to confirm.
             </p>
@@ -189,12 +189,12 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
               autoFocus
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
-              className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+              className="bg-body_bg text-fg rounded px-3 py-2 outline-none"
             />
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
-                className="text-white px-4 py-2 rounded"
+                className="btn-ghost"
                 onClick={() => {
                   setDeleteTarget(null);
                   setDeleteConfirmText("");
@@ -206,7 +206,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
                 type="button"
                 disabled={deleteConfirmText !== String(deleteTarget[fields[0].name]) || busy}
                 onClick={confirmDelete}
-                className="bg-red-600 text-white font-semibold px-4 py-2 rounded disabled:opacity-50"
+                className="bg-red-600 text-fg font-semibold px-4 py-2 rounded disabled:opacity-50"
               >
                 Delete
               </button>

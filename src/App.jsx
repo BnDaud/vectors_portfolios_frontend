@@ -7,24 +7,27 @@ import AddProfile from "./components/addprofile";
 import Login from "./components/login";
 import { AuthProvider } from "./components/authContext";
 import { ToastProvider } from "./components/toastContext";
+import { ThemeProvider } from "./components/themeContext";
 
 function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <div className="bg-body_bg min-h-screen">
-            <Routes>
-              <Route path="/" element={<OwnerRoot />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/addprofile" element={<AddProfile />} />
-              <Route path="/:trackSlug" element={<Template />} />
-              <Route path="*" element={<NotFound404 />} />
-            </Routes>
-          </div>
-        </BrowserRouter>
-      </AuthProvider>
-    </ToastProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <div className="bg-body_bg min-h-screen">
+              <Routes>
+                <Route path="/" element={<OwnerRoot />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/addprofile" element={<AddProfile />} />
+                <Route path="/:trackSlug" element={<Template />} />
+                <Route path="*" element={<NotFound404 />} />
+              </Routes>
+            </div>
+          </BrowserRouter>
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }
 

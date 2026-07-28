@@ -46,7 +46,7 @@ const Allprofiles = () => {
                       <p className="text-lg bg-gradient-to-r from-text_color to-new_color bg-clip-text text-transparent font-semibold capitalize">
                         {username}
                       </p>
-                      <p className="text-white font-medium truncate max-w-26">
+                      <p className="text-fg font-medium truncate max-w-26">
                         {about?.skill ? about.skill : "No Skill Found"}
                       </p>
                     </div>
@@ -55,7 +55,7 @@ const Allprofiles = () => {
                         setUsername(username);
                         setCurrentpage("");
                       }}
-                      className="px-4 py-1 text-sm text-text_color font-semibold rounded-full border border-text_color hover:text-white hover:bg-text_color hover:border-transparent focus:outline-none focus:ring-2 focus:ring-text_color focus:ring-offset-1"
+                      className="px-4 py-1 text-sm text-text_color font-semibold rounded-full border border-text_color hover:text-fg hover:bg-text_color hover:border-transparent focus:outline-none focus:ring-2 focus:ring-text_color focus:ring-offset-1"
                     >
                       View Profile
                     </button>
@@ -75,7 +75,7 @@ const Allprofiles = () => {
       >
         <button
           onClick={() => navigate("/addprofile")}
-          className=" px-4 py-1 text-sm text-text_color  capitalize font-semibold rounded-full border border-text_color hover:text-white hover:bg-text_color hover:border-transparent focus:outline-none focus:ring-2 focus:ring-text_color focus:ring-offset-1"
+          className=" px-4 py-1 text-sm text-text_color  capitalize font-semibold rounded-full border border-text_color hover:text-fg hover:bg-text_color hover:border-transparent focus:outline-none focus:ring-2 focus:ring-text_color focus:ring-offset-1"
         >
           Add Porfolio
         </button>
