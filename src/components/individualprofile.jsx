@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { all_profiles_url, api_base_url, owner_username } from "./globalvalues";
+import { useAuth } from "./authContext";
 import Notyetloader from "./notyetloaded";
 
 const OwnerRoot = () => {
@@ -14,7 +15,11 @@ const OwnerRoot = () => {
   const [formError, setFormError] = useState("");
   const [editingTrackId, setEditingTrackId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
+  const { isAuthenticated, username, authFetch, logout } = useAuth();
 
   const fetchProfile = () => {
     fetch(`${all_profiles_url}?username=${owner_username}`)
@@ -43,7 +48,7 @@ const OwnerRoot = () => {
     setSubmitting(true);
     setFormError("");
 
-    fetch(`${api_base_url}/tracks/`, {
+    authFetch(`${api_base_url}/tracks/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -78,7 +83,7 @@ const OwnerRoot = () => {
     setEditingTrackId(null);
     if (!name) return;
 
-    fetch(`${api_base_url}/tracks/${trackId}`, {
+    authFetch(`${api_base_url}/tracks/${trackId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name }),
@@ -91,28 +96,46 @@ const OwnerRoot = () => {
       .catch((err) => console.error(err));
   };
 
-  const handleDeleteTrack = (e, track) => {
+  const openDeleteModal = (e, track) => {
     e.stopPropagation();
-    if (tracks.length <= 1) {
-      alert("You need at least one portfolio.");
-      return;
-    }
-    if (!window.confirm(`Delete "${track.name}"? This cannot be undone.`)) return;
+    setDeleteTarget(track);
+    setDeleteConfirmText("");
+  };
 
-    fetch(`${api_base_url}/tracks/${track.id}`, { method: "DELETE" })
+  const confirmDelete = () => {
+    if (!deleteTarget || deleteConfirmText !== deleteTarget.name) return;
+
+    setDeleting(true);
+    authFetch(`${api_base_url}/tracks/${deleteTarget.id}`, { method: "DELETE" })
       .then((res) => {
         if (!res.ok) throw new Error("Failed to delete portfolio");
+        setDeleteTarget(null);
+        setDeleteConfirmText("");
         fetchProfile();
       })
-      .catch((err) => console.error(err));
+      .catch((err) => console.error(err))
+      .finally(() => setDeleting(false));
   };
 
   return (
     <div className="pt-20">
-      <nav className="fixed top-0 left-0 w-full z-50 flex items-center px-5 sm:px-10 backdrop-blur-md bg-frame_bg/60 h-16 shadow-md">
+      <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-5 sm:px-10 backdrop-blur-md bg-frame_bg/60 h-16 shadow-md">
         <p className="bg-gradient-to-r from-text_color to-new_color bg-clip-text text-transparent text-2xl sm:text-3xl font-bold">
           Vectored Matrix
         </p>
+        {isAuthenticated ? (
+          <button
+            type="button"
+            onClick={logout}
+            className="text-white/70 hover:text-text_color text-sm"
+          >
+            Logout ({username})
+          </button>
+        ) : (
+          <Link to="/login" className="text-white/70 hover:text-text_color text-sm">
+            Login
+          </Link>
+        )}
       </nav>
 
       <div className="mt-5 mx-5 sm:mx-10 pb-10">
@@ -135,24 +158,28 @@ const OwnerRoot = () => {
               className="relative bg-frame_bg rounded-xl p-6 w-64 flex flex-col items-center text-center hover:cursor-pointer hover:scale-105 transition-transform"
               onClick={() => navigate(`/${track.slug}`)}
             >
-              <div className="absolute top-2 right-2 flex gap-2">
-                <button
-                  type="button"
-                  onClick={(e) => startRename(e, track)}
-                  className="text-white/60 hover:text-text_color"
-                  aria-label="Rename portfolio"
-                >
-                  <HiPencil />
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => handleDeleteTrack(e, track)}
-                  className="text-white/60 hover:text-red-500"
-                  aria-label="Delete portfolio"
-                >
-                  <HiTrash />
-                </button>
-              </div>
+              {isAuthenticated && (
+                <div className="absolute top-2 right-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={(e) => startRename(e, track)}
+                    className="text-white/60 hover:text-text_color"
+                    aria-label="Rename portfolio"
+                  >
+                    <HiPencil />
+                  </button>
+                  {tracks.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => openDeleteModal(e, track)}
+                      className="text-white/60 hover:text-red-500"
+                      aria-label="Delete portfolio"
+                    >
+                      <HiTrash />
+                    </button>
+                  )}
+                </div>
+              )}
 
               {editingTrackId === track.id ? (
                 <input
@@ -177,16 +204,18 @@ const OwnerRoot = () => {
             </div>
           ))}
 
-          <div
-            className="border-2 border-dashed border-text_color/50 rounded-xl p-6 w-64 flex flex-col items-center justify-center text-center hover:cursor-pointer hover:scale-105 transition-transform"
-            onClick={() => setShowNewTrackForm(true)}
-          >
-            <span className="text-text_color text-4xl leading-none">+</span>
-            <p className="text-white text-sm mt-2">New Portfolio</p>
-          </div>
+          {isAuthenticated && (
+            <div
+              className="border-2 border-dashed border-text_color/50 rounded-xl p-6 w-64 flex flex-col items-center justify-center text-center hover:cursor-pointer hover:scale-105 transition-transform"
+              onClick={() => setShowNewTrackForm(true)}
+            >
+              <span className="text-text_color text-4xl leading-none">+</span>
+              <p className="text-white text-sm mt-2">New Portfolio</p>
+            </div>
+          )}
         </div>
 
-        {showNewTrackForm && (
+        {isAuthenticated && showNewTrackForm && (
           <form
             onSubmit={handleCreateTrack}
             className="bg-frame_bg rounded-xl p-6 max-w-md mx-auto mt-8 flex flex-col gap-4"
@@ -240,6 +269,48 @@ const OwnerRoot = () => {
               </button>
             </div>
           </form>
+        )}
+
+        {deleteTarget && (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-5">
+            <div className="bg-frame_bg rounded-xl p-6 max-w-md w-full flex flex-col gap-4">
+              <h3 className="text-text_color text-lg font-semibold">
+                Delete "{deleteTarget.name}"
+              </h3>
+              <p className="text-white text-sm">
+                This cannot be undone. Type{" "}
+                <span className="font-semibold">{deleteTarget.name}</span> to
+                confirm.
+              </p>
+              <input
+                type="text"
+                autoFocus
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                className="bg-body_bg text-white rounded px-3 py-2 outline-none"
+              />
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  className="text-white px-4 py-2 rounded"
+                  onClick={() => {
+                    setDeleteTarget(null);
+                    setDeleteConfirmText("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteConfirmText !== deleteTarget.name || deleting}
+                  onClick={confirmDelete}
+                  className="bg-red-600 text-white font-semibold px-4 py-2 rounded disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
         )}
 
         <div className="mt-14">

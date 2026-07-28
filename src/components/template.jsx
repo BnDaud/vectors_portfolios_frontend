@@ -1,12 +1,14 @@
 import { useState, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi"; // for hamburger icons
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import TrackProfile from "./trackprofile";
 import { owner_username } from "./globalvalues";
+import { useAuth } from "./authContext";
 
 const Template = () => {
   const { trackSlug } = useParams();
   const navigate = useNavigate();
+  const { isAuthenticated, username, logout } = useAuth();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -47,7 +49,7 @@ const Template = () => {
         </div>
 
         {/* Nav Links - Desktop */}
-        <div className="hidden sm:flex gap-6 text-white pr-4">
+        <div className="hidden sm:flex gap-6 items-center text-white pr-4">
           {["home", "about", "resume", "portfolio", "contact"].map(
             (section) => (
               <p
@@ -58,6 +60,19 @@ const Template = () => {
                 {section.charAt(0).toUpperCase() + section.slice(1)}
               </p>
             )
+          )}
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={logout}
+              className="text-white/70 hover:text-text_color text-sm"
+            >
+              Logout ({username})
+            </button>
+          ) : (
+            <Link to="/login" className="text-white/70 hover:text-text_color text-sm">
+              Login
+            </Link>
           )}
         </div>
       </nav>
