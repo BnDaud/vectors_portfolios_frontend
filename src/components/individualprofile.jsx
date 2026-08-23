@@ -7,6 +7,7 @@ import { useToast } from "./toastContext";
 import Notyetloader from "./notyetloaded";
 import GoalsSection from "./goalsSection";
 import ThemeToggle from "./themeToggle";
+import Logo from "./logo";
 
 const OwnerRoot = () => {
   const [profile, setProfile] = useState(null);
@@ -127,9 +128,7 @@ const OwnerRoot = () => {
   return (
     <div className="pt-20">
       <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-5 sm:px-10 backdrop-blur-md bg-frame_bg/60 h-16 shadow-md">
-        <p className="bg-gradient-to-r from-text_color to-new_color bg-clip-text text-transparent text-2xl sm:text-3xl font-bold">
-          Vectored Matrix
-        </p>
+        <Logo />
         <div className="flex items-center gap-4">
           <ThemeToggle />
           {isAuthenticated ? (
@@ -323,14 +322,16 @@ const OwnerRoot = () => {
           </div>
         )}
 
-        <GoalsSection
-          goals={goals}
-          tracks={tracks}
-          onChange={() => {
-            fetchGoals();
-            fetchProfile();
-          }}
-        />
+        {isAuthenticated && (
+          <GoalsSection
+            goals={goals}
+            tracks={tracks}
+            onChange={() => {
+              fetchGoals();
+              fetchProfile();
+            }}
+          />
+        )}
       </div>
     </div>
   );

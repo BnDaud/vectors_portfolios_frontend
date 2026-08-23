@@ -9,6 +9,7 @@ import About from "./Sections/about";
 import Notyetloader from "./notyetloaded";
 import NotFound404 from "./notfound";
 import EditPanel from "./editPanel";
+import Logo from "./logo";
 
 const TrackProfile = ({ username, trackSlug, refs }) => {
   const [profile, setProfile] = useState(null);
@@ -78,8 +79,8 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
         </>
       )}
 
-      <div className=" mt-5 bg-frame_bg mx-5 sm:mx-10 text-text_color text-center text-3xl font-semibold py-5">
-        @Vectored Matrix
+      <div className="mt-5 bg-frame_bg mx-5 sm:mx-10 rounded-2xl border border-frame_border flex justify-center py-6">
+        <Logo fullClassName="h-14 sm:h-16" alwaysFull />
       </div>
     </>
   );

@@ -6,6 +6,16 @@ export const all_profiles_url = `${api_base_url}/profiles/`;
 // This site is single-owner: every route resolves to this one profile.
 export const owner_username = import.meta.env.VITE_OWNER_USERNAME || "Vector";
 
+// Brand assets - same 4-variant convention (full/icon x light/dark) as the
+// VectoredMatrix SaaS project, hosted in that project's Supabase storage.
+const BRANDING_BASE = "https://jeuuxtzqlrzaqslthhxx.supabase.co/storage/v1/object/public/branding";
+export const logo = {
+  fullLight: `${BRANDING_BASE}/logo-full-light.png`,
+  fullDark: `${BRANDING_BASE}/logo-full-dark.png`,
+  iconLight: `${BRANDING_BASE}/logo-icon-light.png`,
+  iconDark: `${BRANDING_BASE}/logo-icon-dark.png`,
+};
+
 // Mirrors Portfolio.portfolio_choice in the backend model.
 export const portfolio_categories = [
   "WebDev", "DataScience", "AI", "MachineLearning", "ComputerVision", "NLP",

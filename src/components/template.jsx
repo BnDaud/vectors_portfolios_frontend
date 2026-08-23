@@ -5,6 +5,7 @@ import TrackProfile from "./trackprofile";
 import { owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
 import ThemeToggle from "./themeToggle";
+import Logo from "./logo";
 
 const SECTIONS = ["home", "about", "resume", "portfolio", "contact"];
 
@@ -84,12 +85,7 @@ const Template = () => {
     <div className="pt-20">
       {/* Navbar */}
       <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-5 sm:px-10 backdrop-blur-md bg-frame_bg/70 h-16 border-b border-frame_border">
-        <p
-          className="hover:cursor-pointer bg-gradient-to-r from-text_color to-new_color bg-clip-text text-transparent text-2xl sm:text-3xl font-bold"
-          onClick={() => navigate("/")}
-        >
-          Vectored Matrix
-        </p>
+        <Logo />
 
         {/* Mobile Menu Toggle */}
         <div className="sm:hidden flex items-center gap-4">
