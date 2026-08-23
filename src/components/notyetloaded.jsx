@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const Notyetloader = () => {
   return (
-    <div className="w-full flex flex-col items-center justify-start pt-24 sm:pt-32 min-h-[50vh]">
+    <div className="w-full min-h-screen flex flex-col items-center justify-center">
       <div className="relative w-16 h-16">
         <div className="absolute inset-0 rounded-full border-2 border-frame_border" />
         <motion.div

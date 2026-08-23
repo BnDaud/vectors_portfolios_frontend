@@ -56,7 +56,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
         <EditPanel profile={profile} track={track} onSaved={fetchProfile} />
       ) : (
         <>
-          <div ref={refs?.home}>
+          <div ref={refs?.home} className="scroll-mt-20">
             <Home
               username={username}
               user={profile.user}
@@ -64,16 +64,16 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
               img={profile?.display_pic}
             />
           </div>
-          <div ref={refs?.about}>
+          <div ref={refs?.about} className="scroll-mt-20">
             <About username={username} about={track.about} />
           </div>
-          <div ref={refs?.resume}>
+          <div ref={refs?.resume} className="scroll-mt-20">
             <Resume username={username} about={track.about} />
           </div>
-          <div ref={refs?.portfolio}>
+          <div ref={refs?.portfolio} className="scroll-mt-20">
             <Portfolio username={username} portfolio={track.items} />
           </div>
-          <div ref={refs?.contact}>
+          <div ref={refs?.contact} className="scroll-mt-20">
             <Contact username={username} contact={profile} />
           </div>
         </>

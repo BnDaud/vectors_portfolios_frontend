@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { HiMenu, HiX } from "react-icons/hi"; // for hamburger icons
+import { FiLogIn, FiLogOut } from "react-icons/fi";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import TrackProfile from "./trackprofile";
 import { owner_username } from "./globalvalues";
@@ -115,12 +116,14 @@ const Template = () => {
             <button
               type="button"
               onClick={logout}
-              className="text-fg/70 hover:text-text_color text-sm"
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-frame_border text-fg/80 hover:text-red-400 hover:border-red-400/40 transition-colors"
             >
-              Logout ({username})
+              <FiLogOut />
+              {username}
             </button>
           ) : (
-            <Link to="/login" className="text-fg/70 hover:text-text_color text-sm">
+            <Link to="/login" className="btn-primary flex items-center gap-1.5 text-sm">
+              <FiLogIn />
               Login
             </Link>
           )}
@@ -140,11 +143,17 @@ const Template = () => {
             </p>
           ))}
           {isAuthenticated ? (
-            <p className="text-lg hover:cursor-pointer text-fg" onClick={logout}>
-              Logout ({username})
-            </p>
+            <button
+              type="button"
+              onClick={logout}
+              className="flex items-center gap-2 text-lg text-fg hover:text-red-400"
+            >
+              <FiLogOut />
+              {username}
+            </button>
           ) : (
-            <Link to="/login" className="block text-lg text-fg">
+            <Link to="/login" className="btn-primary flex items-center gap-2 w-fit text-lg">
+              <FiLogIn />
               Login
             </Link>
           )}

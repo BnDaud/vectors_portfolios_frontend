@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { HiPencil, HiTrash } from "react-icons/hi";
+import { FiLogIn, FiLogOut } from "react-icons/fi";
 import { all_profiles_url, api_base_url, owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
@@ -135,12 +136,14 @@ const OwnerRoot = () => {
             <button
               type="button"
               onClick={logout}
-              className="text-fg/70 hover:text-text_color text-sm"
+              className="flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-frame_border text-fg/80 hover:text-red-400 hover:border-red-400/40 transition-colors"
             >
-              Logout ({username})
+              <FiLogOut />
+              {username}
             </button>
           ) : (
-            <Link to="/login" className="text-fg/70 hover:text-text_color text-sm">
+            <Link to="/login" className="btn-primary flex items-center gap-1.5 text-sm">
+              <FiLogIn />
               Login
             </Link>
           )}
