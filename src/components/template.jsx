@@ -100,7 +100,7 @@ const Template = () => {
         </div>
 
         {/* Nav Links - Desktop */}
-        <div className="hidden sm:flex gap-2 items-center pr-4">
+        <div className="hidden sm:flex gap-3 items-center pr-4">
           {SECTIONS.map((section) => (
             <p
               key={section}
