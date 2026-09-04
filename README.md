@@ -91,3 +91,5 @@ src/
 ```
 
 ---
+
+_Last verified: 2026-09-04 (SSH key rotation check)_
