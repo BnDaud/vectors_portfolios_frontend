@@ -39,6 +39,7 @@ const EntryCard = ({ icon, title, subtitle, meta, certificate }) => (
 
 const Resume = ({
   username,
+  trackName,
   about: { resume, school, proficiency, years_of_experience },
 }) => {
   const [tab, setTab] = useState("experience");
@@ -81,8 +82,15 @@ const Resume = ({
       {tab === "experience" && (
         <div>
           <p className="text-fg text-xl sm:text-2xl font-bold text-center mb-6">
-            More than <span className="text-text_color">{years_of_experience}</span> years
-            experience as a <span className="text-text_color">Fullstack</span> developer
+            {years_of_experience < 1 ? (
+              "Less than a year"
+            ) : (
+              <>
+                More than <span className="text-text_color">{years_of_experience}</span>{" "}
+                {years_of_experience === 1 ? "year" : "years"}
+              </>
+            )}{" "}
+            of <span className="text-text_color">{trackName}</span> experience
           </p>
           <div className="flex flex-col gap-3 max-w-2xl mx-auto">
             {resume.map((r) => (

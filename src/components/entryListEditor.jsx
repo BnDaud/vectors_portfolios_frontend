@@ -191,7 +191,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
             key={field.name}
             field={field}
             value={newEntry[field.name]}
-            showError={attempted || touched[field.name]}
+            showError={Boolean(attempted || touched[field.name])}
             onBlur={() => setTouched((prev) => ({ ...prev, [field.name]: true }))}
             onChange={(v) => {
               setTouched((prev) => ({ ...prev, [field.name]: true }));

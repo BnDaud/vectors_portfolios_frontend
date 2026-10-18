@@ -16,6 +16,7 @@ import {
 const LabeledField = ({ field, value, onChange }) => {
   const error = validateField(field, value);
   const Control = field.type === "textarea" ? "textarea" : "input";
+  const isNumber = field.type === "number";
 
   return (
     <div className={`flex flex-col gap-1 ${field.span ? "sm:col-span-2" : ""}`}>
@@ -24,10 +25,22 @@ const LabeledField = ({ field, value, onChange }) => {
         {field.required && <span className="text-red-500"> *</span>}
       </label>
       <Control
-        type={field.type === "textarea" ? undefined : field.type === "date" ? "date" : "text"}
+        type={
+          field.type === "textarea"
+            ? undefined
+            : field.type === "date"
+              ? "date"
+              : isNumber
+                ? "number"
+                : "text"
+        }
         rows={field.type === "textarea" ? 4 : undefined}
+        min={isNumber ? field.min : undefined}
+        max={isNumber ? field.max : undefined}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) =>
+          onChange(isNumber && e.target.value !== "" ? Number(e.target.value) : e.target.value)
+        }
         aria-invalid={!!error}
         className={inputClass(error)}
       />
@@ -68,10 +81,11 @@ const ProfileAboutForm = ({ track, about, onSaved }) => {
       authFetch(`${api_base_url}/about/${about.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        // The date column is nullable but rejects "" - send null when cleared.
         body: JSON.stringify({
-          ...aboutData,
-          experience_since: aboutData.experience_since || null,
+          skill: aboutData.skill,
+          image_link: aboutData.image_link,
+          description: aboutData.description,
+          experience_base_years: aboutData.years_of_experience,
         }),
       }),
     ])

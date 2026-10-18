@@ -19,9 +19,13 @@ export const PROFILE_FIELDS = [
 export const ABOUT_FIELDS = [
   { name: "skill", label: "Skill / headline", required: true, maxLength: 100 },
   {
-    name: "experience_since",
-    label: "Experience since (years of experience auto-updates from this every year)",
-    type: "date",
+    // Shown as the portfolio's current years (already rolled over by the
+    // backend); saved as experience_base_years, which re-anchors it to now.
+    name: "years_of_experience",
+    label: "Years of experience (adds 1 automatically every January 1)",
+    type: "number",
+    min: 0,
+    max: 80,
   },
   { name: "image_link", label: "About image URL", span: true, ...URL_RULES },
   {
