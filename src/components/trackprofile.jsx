@@ -53,7 +53,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
       )}
 
       {editMode ? (
-        <EditPanel profile={profile} track={track} onSaved={fetchProfile} />
+        <EditPanel track={track} onSaved={fetchProfile} />
       ) : (
         <>
           <div ref={refs?.home} className="scroll-mt-20">
@@ -61,7 +61,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
               username={username}
               user={profile.user}
               about={track.about}
-              img={profile?.display_pic}
+              img={track.display_pic || profile.display_pic}
             />
           </div>
           <div ref={refs?.about} className="scroll-mt-20">
@@ -74,7 +74,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
             <Portfolio username={username} portfolio={track.items} />
           </div>
           <div ref={refs?.contact} className="scroll-mt-20">
-            <Contact username={username} contact={profile} />
+            <Contact username={username} contact={{ ...profile, ...track }} />
           </div>
         </>
       )}

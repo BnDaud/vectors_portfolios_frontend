@@ -36,10 +36,12 @@ const LabeledField = ({ field, value, onChange }) => {
   );
 };
 
-const ProfileAboutForm = ({ profile, about, onSaved }) => {
+// dp, links and about all belong to this one track, so editing them never
+// touches another portfolio (or the one this was copied from).
+const ProfileAboutForm = ({ track, about, onSaved }) => {
   const { authFetch } = useAuth();
   const [profileData, setProfileData] = useState(
-    Object.fromEntries(PROFILE_FIELDS.map((f) => [f.name, profile[f.name] ?? ""]))
+    Object.fromEntries(PROFILE_FIELDS.map((f) => [f.name, track[f.name] ?? ""]))
   );
   const [aboutData, setAboutData] = useState(
     Object.fromEntries(ABOUT_FIELDS.map((f) => [f.name, about[f.name] ?? ""]))
@@ -58,7 +60,7 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
     setError("");
 
     Promise.all([
-      authFetch(`${api_base_url}/profiles/${profile.id}`, {
+      authFetch(`${api_base_url}/tracks/${track.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(profileData),
@@ -136,12 +138,12 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
   );
 };
 
-const EditPanel = ({ profile, track, onSaved }) => {
+const EditPanel = ({ track, onSaved }) => {
   const about = track.about;
 
   return (
     <div className="pb-10">
-      <ProfileAboutForm profile={profile} about={about} onSaved={onSaved} />
+      <ProfileAboutForm key={track.id} track={track} about={about} onSaved={onSaved} />
 
       <EntryListEditor
         title="Resume"

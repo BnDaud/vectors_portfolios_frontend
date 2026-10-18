@@ -9,6 +9,14 @@ import Notyetloader from "./notyetloaded";
 import GoalsSection from "./goalsSection";
 import ThemeToggle from "./themeToggle";
 import Logo from "./logo";
+import Avatar from "./avatar";
+import FieldHint from "./fieldHint";
+import { PROFILE_FIELDS } from "./fieldDefs";
+import { validateField, describeFailure, inputClass } from "./validation";
+
+// The landing page image is the owner profile's display_pic - same rules as
+// any other dp (required, full URL, 200 characters).
+const LANDING_IMAGE_FIELD = PROFILE_FIELDS.find((f) => f.name === "display_pic");
 
 const OwnerRoot = () => {
   const [profile, setProfile] = useState(null);
@@ -21,6 +29,10 @@ const OwnerRoot = () => {
   const [formError, setFormError] = useState("");
   const [editingTrackId, setEditingTrackId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const [editingLanding, setEditingLanding] = useState(false);
+  const [landingUrl, setLandingUrl] = useState("");
+  const [landingError, setLandingError] = useState("");
+  const [savingLanding, setSavingLanding] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -105,6 +117,32 @@ const OwnerRoot = () => {
       .catch((err) => showToast(err.message));
   };
 
+  const startLandingEdit = () => {
+    setLandingUrl(profile.display_pic || "");
+    setLandingError("");
+    setEditingLanding(true);
+  };
+
+  const saveLandingImage = (e) => {
+    e.preventDefault();
+    if (validateField(LANDING_IMAGE_FIELD, landingUrl)) return;
+
+    setSavingLanding(true);
+    setLandingError("");
+    authFetch(`${api_base_url}/profiles/${profile.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ display_pic: landingUrl.trim() }),
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await describeFailure("Image not saved", res));
+        setEditingLanding(false);
+        fetchProfile();
+      })
+      .catch((err) => setLandingError(err.message))
+      .finally(() => setSavingLanding(false));
+  };
+
   const openDeleteModal = (e, track) => {
     e.stopPropagation();
     setDeleteTarget(track);
@@ -152,11 +190,57 @@ const OwnerRoot = () => {
 
       <div className="mt-5 mx-5 sm:mx-10 pb-10">
         <div className="flex flex-col items-center text-center mb-10">
-          <img
-            src={profile.display_pic}
-            className="w-32 h-32 rounded-full object-cover mb-4"
-            alt={profile.user.username}
-          />
+          <div className="relative mb-4">
+            <Avatar src={profile.display_pic} label={profile.user.username} className="h-32 w-32" />
+            {isAuthenticated && !editingLanding && (
+              <button
+                type="button"
+                onClick={startLandingEdit}
+                className="absolute bottom-0 right-0 p-2 rounded-full bg-frame_bg border border-frame_border text-fg/70 hover:text-text_color shadow"
+                aria-label="Change landing page image"
+              >
+                <HiPencil />
+              </button>
+            )}
+          </div>
+
+          {isAuthenticated && editingLanding && (
+            <form
+              onSubmit={saveLandingImage}
+              noValidate
+              className="w-full max-w-md mb-4 flex flex-col gap-1 text-left"
+            >
+              <label className="text-fg/60 text-xs">
+                Landing page image URL<span className="text-red-500"> *</span>
+              </label>
+              <input
+                type="text"
+                autoFocus
+                value={landingUrl}
+                onChange={(e) => setLandingUrl(e.target.value)}
+                aria-invalid={!!validateField(LANDING_IMAGE_FIELD, landingUrl)}
+                className={inputClass(validateField(LANDING_IMAGE_FIELD, landingUrl))}
+              />
+              <FieldHint
+                field={LANDING_IMAGE_FIELD}
+                value={landingUrl}
+                error={validateField(LANDING_IMAGE_FIELD, landingUrl)}
+              />
+              {landingError && <p className="text-red-500 text-xs">{landingError}</p>}
+              <div className="flex gap-3 justify-end mt-1">
+                <button type="button" className="btn-ghost" onClick={() => setEditingLanding(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingLanding || !!validateField(LANDING_IMAGE_FIELD, landingUrl)}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  {savingLanding ? "Saving..." : "Save image"}
+                </button>
+              </div>
+            </form>
+          )}
           <h1 className="text-text_color text-3xl font-bold">
             {profile.user.first_name} {profile.user.last_name}
           </h1>
@@ -167,9 +251,22 @@ const OwnerRoot = () => {
           {tracks.map((track) => (
             <div
               key={track.id}
-              className="relative bg-frame_bg border border-frame_border rounded-xl p-6 w-64 flex flex-col items-center text-center hover:cursor-pointer hover:scale-105 hover:shadow-[0_0_24px_-4px_var(--color-text_color)] hover:border-text_color/40 transition-all"
+              data-track-slug={track.slug}
+              role="link"
+              tabIndex={0}
+              aria-label={`Open ${track.name} portfolio`}
               onClick={() => navigate(`/${track.slug}`)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && e.target === e.currentTarget) navigate(`/${track.slug}`);
+              }}
+              className="group relative w-full sm:w-[24rem] cursor-pointer bg-frame_bg border border-frame_border rounded-xl shadow-lg px-6 py-8 sm:py-5 flex flex-col items-center gap-4 text-center sm:flex-row sm:gap-x-6 sm:text-left outline-none transition-all hover:-translate-y-1 hover:border-text_color/40 hover:shadow-[0_0_24px_-4px_var(--color-text_color)] focus-visible:ring-2 focus-visible:ring-text_color"
             >
+              <Avatar
+                src={track.display_pic || profile.display_pic}
+                label={track.name}
+                className="h-24 w-24"
+              />
+
               {isAuthenticated && (
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button
@@ -193,33 +290,45 @@ const OwnerRoot = () => {
                 </div>
               )}
 
-              {editingTrackId === track.id ? (
-                <input
-                  type="text"
-                  autoFocus
-                  value={editingName}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onBlur={() => submitRename(track.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") submitRename(track.id);
-                    if (e.key === "Escape") setEditingTrackId(null);
-                  }}
-                  className="bg-body_bg text-text_color text-xl font-semibold text-center rounded px-2 py-1 w-full outline-none"
-                />
-              ) : (
-                <h3 className="text-text_color text-xl font-semibold">
-                  {track.name}
-                </h3>
-              )}
-              <p className="text-fg text-sm mt-2">{track.about?.skill}</p>
+              <div className={`min-w-0 flex-1 space-y-2 ${isAuthenticated ? "sm:pr-6" : ""}`}>
+                <div className="space-y-0.5">
+                  {editingTrackId === track.id ? (
+                    <input
+                      type="text"
+                      autoFocus
+                      value={editingName}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onBlur={() => submitRename(track.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") submitRename(track.id);
+                        if (e.key === "Escape") setEditingTrackId(null);
+                      }}
+                      className="bg-body_bg text-text_color text-lg font-semibold rounded px-2 py-1 w-full outline-none"
+                    />
+                  ) : (
+                    <h3 className="text-text_color text-lg font-semibold truncate">
+                      {track.name}
+                    </h3>
+                  )}
+                  <p className="text-fg/60 font-medium line-clamp-2">{track.about?.skill}</p>
+                </div>
+                <span className="inline-block px-4 py-1 text-sm text-text_color font-semibold rounded-full border border-text_color/40 transition-colors group-hover:bg-text_color group-hover:text-body_bg group-hover:border-transparent">
+                  View portfolio
+                </span>
+              </div>
             </div>
           ))}
 
           {isAuthenticated && (
             <div
-              className="border-2 border-dashed border-text_color/50 rounded-xl p-6 w-64 flex flex-col items-center justify-center text-center hover:cursor-pointer hover:scale-105 hover:border-text_color transition-all"
+              role="button"
+              tabIndex={0}
               onClick={() => setShowNewTrackForm(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") setShowNewTrackForm(true);
+              }}
+              className="w-full sm:w-[24rem] min-h-36 border-2 border-dashed border-text_color/50 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer outline-none transition-all hover:-translate-y-1 hover:border-text_color focus-visible:ring-2 focus-visible:ring-text_color"
             >
               <span className="text-text_color text-4xl leading-none">+</span>
               <p className="text-fg text-sm mt-2">New Portfolio</p>
