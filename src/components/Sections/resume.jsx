@@ -8,6 +8,43 @@ const yearOf = (date) => date.split("-")[0];
 const dateRange = (start, end) =>
   `${yearOf(start)} - ${yearOf(end) >= new Date().getFullYear() ? "Till Date" : yearOf(end)}`;
 
+// A skill's 0-100 rating is the owner's own; this puts it into words so the
+// number says something about the skill. Bands: 80+ Expert, 60+ Advanced,
+// 35+ Intermediate, below that Beginner.
+const LEVELS = [
+  { min: 80, label: "Expert", meaning: "Deep expertise; handles complex problems with ease." },
+  { min: 60, label: "Advanced", meaning: "Strong, confident working command." },
+  { min: 35, label: "Intermediate", meaning: "Solid grasp of the core ideas; still building real-world experience." },
+  { min: 0, label: "Beginner", meaning: "Just getting started - learning the fundamentals." },
+];
+const levelFor = (rating) => LEVELS.find((level) => rating >= level.min);
+
+// How long a job or course ran, and whether it still is. Computed from the
+// dates, so it stays right as time passes. An end date still in the future
+// means it is ongoing.
+const parseDay = (iso) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+const monthsBetween = (from, to) => {
+  let months = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+  if (to.getDate() < from.getDate()) months -= 1;
+  return Math.max(0, months);
+};
+const spanOf = (months) => {
+  if (months < 1) return "Under a month";
+  if (months < 12) return `${months} month${months > 1 ? "s" : ""}`;
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  return `${years} yr${years > 1 ? "s" : ""}${rest ? ` ${rest} mo` : ""}`;
+};
+const timeline = (start, end) => {
+  const now = new Date();
+  const ongoing = parseDay(end) > now;
+  const duration = spanOf(monthsBetween(parseDay(start), ongoing ? now : parseDay(end)));
+  return { ongoing, duration };
+};
+
 const CertificateThumb = ({ link }) =>
   link ? (
     <a
@@ -42,7 +79,23 @@ const Board = ({ entry }) => (
       <div className="flex-1 min-w-0">
         <h3 className="text-fg text-2xl sm:text-3xl font-bold break-words">{entry.title}</h3>
         {entry.subtitle && <p className="text-text_color text-lg font-semibold break-words">{entry.subtitle}</p>}
-        <p className="text-fg/60 text-sm mt-1.5">{entry.meta}</p>
+        {entry.meta && <p className="text-fg/60 text-sm mt-1.5">{entry.meta}</p>}
+        {entry.chips?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
+            {entry.chips.map((chip) => (
+              <span
+                key={chip.text}
+                className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                  chip.accent
+                    ? "border-text_color/50 bg-text_color/10 text-text_color"
+                    : "border-fg/20 text-fg/70"
+                }`}
+              >
+                {chip.text}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <CertificateThumb link={entry.certificate} />
     </div>
@@ -50,7 +103,7 @@ const Board = ({ entry }) => (
     {entry.level != null && (
       <div>
         <div className="flex justify-between text-sm text-fg/70 mb-1">
-          <span>Proficiency</span>
+          <span>Proficiency (self-rated)</span>
           <span>{entry.level}%</span>
         </div>
         <div className="relative w-full h-2 bg-fg/15 rounded-full overflow-hidden">
@@ -61,6 +114,7 @@ const Board = ({ entry }) => (
             transition={{ duration: 0.8, ease: "easeOut" }}
           />
         </div>
+        {entry.insight && <p className="text-sm text-fg/60 mt-2">{entry.insight}</p>}
       </div>
     )}
 
@@ -86,43 +140,60 @@ const Resume = ({
   // Normalise the three kinds of entry into one shape the wheel and board share.
   const entries = useMemo(() => {
     if (tab === "experience") {
-      return resume.map((r) => ({
-        key: `r${r.id}`,
-        label: r.company_name,
-        sub: r.post,
-        title: r.post,
-        subtitle: r.company_name,
-        meta: dateRange(r.start_year, r.end_year),
-        description: r.description,
-        certificate: r.certificate_link,
-        icon: <FaBriefcase />,
-      }));
+      return resume.map((r) => {
+        const { ongoing, duration } = timeline(r.start_year, r.end_year);
+        return {
+          key: `r${r.id}`,
+          label: r.company_name,
+          sub: `${r.post} · ${ongoing ? "Current" : duration}`,
+          title: r.post,
+          subtitle: r.company_name,
+          meta: dateRange(r.start_year, r.end_year),
+          chips: ongoing
+            ? [{ text: "Current", accent: true }, { text: `${duration} so far` }]
+            : [{ text: duration }],
+          description: r.description,
+          certificate: r.certificate_link,
+          icon: <FaBriefcase />,
+        };
+      });
     }
     if (tab === "education") {
-      return school.map((s) => ({
-        key: `s${s.id}`,
-        label: s.school_name,
-        sub: dateRange(s.start_year, s.end_year),
-        title: s.school_name,
-        subtitle: "",
-        meta: dateRange(s.start_year, s.end_year),
-        description: s.description,
-        certificate: s.certificate_link,
-        icon: <IoSchool />,
-      }));
+      return school.map((s) => {
+        const { ongoing, duration } = timeline(s.start_year, s.end_year);
+        return {
+          key: `s${s.id}`,
+          label: s.school_name,
+          sub: `${dateRange(s.start_year, s.end_year)} · ${ongoing ? "In progress" : duration}`,
+          title: s.school_name,
+          subtitle: "",
+          meta: dateRange(s.start_year, s.end_year),
+          chips: ongoing
+            ? [{ text: "In progress", accent: true }, { text: `${duration} so far` }]
+            : [{ text: duration }, { text: "Completed" }],
+          description: s.description,
+          certificate: s.certificate_link,
+          icon: <IoSchool />,
+        };
+      });
     }
-    return proficiency.map((p) => ({
-      key: `p${p.id}`,
-      label: p.skill_name,
-      sub: `${p.skill_range}%`,
-      title: p.skill_name,
-      subtitle: "",
-      meta: "",
-      level: p.skill_range,
-      description: p.description,
-      certificate: p.certificate_link,
-      icon: <FaCode />,
-    }));
+    return proficiency.map((p) => {
+      const level = levelFor(p.skill_range);
+      return {
+        key: `p${p.id}`,
+        label: p.skill_name,
+        sub: `${level.label} · ${p.skill_range}%`,
+        title: p.skill_name,
+        subtitle: "",
+        meta: "",
+        chips: [{ text: level.label, accent: true }],
+        level: p.skill_range,
+        insight: level.meaning,
+        description: p.description,
+        certificate: p.certificate_link,
+        icon: <FaCode />,
+      };
+    });
   }, [tab, resume, school, proficiency]);
 
   const headline =
