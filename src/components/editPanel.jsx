@@ -1,63 +1,59 @@
 import { useState } from "react";
-import { api_base_url, portfolio_categories } from "./globalvalues";
+import { api_base_url } from "./globalvalues";
 import { useAuth } from "./authContext";
 import EntryListEditor from "./entryListEditor";
+import FieldHint from "./fieldHint";
+import { validateField, validateAll, describeFailure, inputClass } from "./validation";
+import {
+  PROFILE_FIELDS,
+  ABOUT_FIELDS,
+  RESUME_FIELDS,
+  SCHOOL_FIELDS,
+  PROFICIENCY_FIELDS,
+  PORTFOLIO_FIELDS,
+} from "./fieldDefs";
 
-const PROFILE_FIELDS = [
-  { name: "display_pic", label: "Display picture URL" },
-  { name: "github", label: "GitHub" },
-  { name: "linkedin", label: "LinkedIn" },
-  { name: "whatapp", label: "WhatsApp" },
-  { name: "facebook", label: "Facebook" },
-  { name: "twitter", label: "Twitter" },
-  { name: "email", label: "Email" },
-  { name: "phone_number", label: "Phone number" },
-];
+const LabeledField = ({ field, value, onChange }) => {
+  const error = validateField(field, value);
+  const Control = field.type === "textarea" ? "textarea" : "input";
 
-const RESUME_FIELDS = [
-  { name: "post", label: "Position", type: "text" },
-  { name: "company_name", label: "Company", type: "text" },
-  { name: "start_year", label: "Start", type: "date" },
-  { name: "end_year", label: "End", type: "date" },
-  { name: "certificate_link", label: "Certificate link (optional)", type: "text" },
-];
-
-const SCHOOL_FIELDS = [
-  { name: "school_name", label: "School", type: "text" },
-  { name: "start_year", label: "Start", type: "date" },
-  { name: "end_year", label: "End", type: "date" },
-  { name: "certificate_link", label: "Certificate link (optional)", type: "text" },
-];
-
-const PROFICIENCY_FIELDS = [
-  { name: "skill_name", label: "Skill", type: "text" },
-  { name: "skill_range", label: "Level (0-100)", type: "number", min: 0, max: 100 },
-  { name: "certificate_link", label: "Certificate link (optional)", type: "text" },
-];
-
-const PORTFOLIO_FIELDS = [
-  { name: "category", label: "Category", type: "select", options: portfolio_categories },
-  { name: "name", label: "Name", type: "text" },
-  { name: "thumbnail", label: "Thumbnail URL", type: "text" },
-  { name: "project_link", label: "Project link", type: "text" },
-];
+  return (
+    <div className={`flex flex-col gap-1 ${field.span ? "sm:col-span-2" : ""}`}>
+      <label className="text-fg/60 text-xs">
+        {field.label}
+        {field.required && <span className="text-red-500"> *</span>}
+      </label>
+      <Control
+        type={field.type === "textarea" ? undefined : field.type === "date" ? "date" : "text"}
+        rows={field.type === "textarea" ? 4 : undefined}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={!!error}
+        className={inputClass(error)}
+      />
+      <FieldHint field={field} value={value} error={error} />
+    </div>
+  );
+};
 
 const ProfileAboutForm = ({ profile, about, onSaved }) => {
   const { authFetch } = useAuth();
   const [profileData, setProfileData] = useState(
     Object.fromEntries(PROFILE_FIELDS.map((f) => [f.name, profile[f.name] ?? ""]))
   );
-  const [aboutData, setAboutData] = useState({
-    skill: about.skill ?? "",
-    experience_since: about.experience_since ?? "",
-    description: about.description ?? "",
-    image_link: about.image_link ?? "",
-  });
+  const [aboutData, setAboutData] = useState(
+    Object.fromEntries(ABOUT_FIELDS.map((f) => [f.name, about[f.name] ?? ""]))
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const errorCount =
+    Object.keys(validateAll(PROFILE_FIELDS, profileData)).length +
+    Object.keys(validateAll(ABOUT_FIELDS, aboutData)).length;
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (errorCount > 0) return;
     setSaving(true);
     setError("");
 
@@ -70,12 +66,21 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
       authFetch(`${api_base_url}/about/${about.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(aboutData),
+        // The date column is nullable but rejects "" - send null when cleared.
+        body: JSON.stringify({
+          ...aboutData,
+          experience_since: aboutData.experience_since || null,
+        }),
       }),
     ])
-      .then(([profileRes, aboutRes]) => {
-        if (!profileRes.ok || !aboutRes.ok) throw new Error("Save failed");
+      .then(async ([profileRes, aboutRes]) => {
+        const failures = [];
+        if (!profileRes.ok) failures.push(await describeFailure("Profile not saved", profileRes));
+        if (!aboutRes.ok) failures.push(await describeFailure("About not saved", aboutRes));
+        // One request may have succeeded while the other failed - refresh so
+        // the form reflects what is actually stored.
         onSaved();
+        if (failures.length) throw new Error(failures.join(" | "));
       })
       .catch((err) => setError(err.message))
       .finally(() => setSaving(false));
@@ -84,78 +89,49 @@ const ProfileAboutForm = ({ profile, about, onSaved }) => {
   return (
     <form
       onSubmit={handleSubmit}
+      noValidate
       className="bg-frame_bg rounded-xl p-6 mx-5 sm:mx-10 mt-5 flex flex-col gap-4"
     >
       <h3 className="text-text_color text-xl font-semibold">Profile & About</h3>
 
       <div className="grid sm:grid-cols-2 gap-3">
         {PROFILE_FIELDS.map((f) => (
-          <div key={f.name} className="flex flex-col gap-1">
-            <label className="text-fg/60 text-xs">{f.label}</label>
-            <input
-              type="text"
-              value={profileData[f.name]}
-              onChange={(e) =>
-                setProfileData((prev) => ({ ...prev, [f.name]: e.target.value }))
-              }
-              className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
-            />
-          </div>
+          <LabeledField
+            key={f.name}
+            field={f}
+            value={profileData[f.name]}
+            onChange={(v) => setProfileData((prev) => ({ ...prev, [f.name]: v }))}
+          />
         ))}
       </div>
 
       <div className="grid sm:grid-cols-2 gap-3">
-        <div className="flex flex-col gap-1">
-          <label className="text-fg/60 text-xs">Skill / headline</label>
-          <input
-            type="text"
-            value={aboutData.skill}
-            onChange={(e) => setAboutData((prev) => ({ ...prev, skill: e.target.value }))}
-            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
+        {ABOUT_FIELDS.map((f) => (
+          <LabeledField
+            key={f.name}
+            field={f}
+            value={aboutData[f.name]}
+            onChange={(v) => setAboutData((prev) => ({ ...prev, [f.name]: v }))}
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-fg/60 text-xs">
-            Experience since (years of experience auto-updates from this every year)
-          </label>
-          <input
-            type="date"
-            value={aboutData.experience_since}
-            onChange={(e) =>
-              setAboutData((prev) => ({ ...prev, experience_since: e.target.value }))
-            }
-            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
-          />
-        </div>
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <label className="text-fg/60 text-xs">About image URL</label>
-          <input
-            type="text"
-            value={aboutData.image_link}
-            onChange={(e) => setAboutData((prev) => ({ ...prev, image_link: e.target.value }))}
-            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
-          />
-        </div>
-        <div className="flex flex-col gap-1 sm:col-span-2">
-          <label className="text-fg/60 text-xs">Description</label>
-          <textarea
-            rows={4}
-            value={aboutData.description}
-            onChange={(e) => setAboutData((prev) => ({ ...prev, description: e.target.value }))}
-            className="bg-body_bg text-fg rounded px-2 py-1 outline-none"
-          />
-        </div>
+        ))}
       </div>
 
       {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="btn-primary self-start disabled:opacity-50"
-      >
-        {saving ? "Saving..." : "Save Profile & About"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={saving || errorCount > 0}
+          className="btn-primary self-start disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Profile & About"}
+        </button>
+        {errorCount > 0 && (
+          <span className="text-red-500 text-sm">
+            Fix {errorCount} highlighted field{errorCount > 1 ? "s" : ""} to save
+          </span>
+        )}
+      </div>
     </form>
   );
 };

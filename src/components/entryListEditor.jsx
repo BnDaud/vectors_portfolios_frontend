@@ -2,18 +2,33 @@ import { useEffect, useState } from "react";
 import { HiTrash } from "react-icons/hi";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
+import FieldHint from "./fieldHint";
+import { validateField, validateAll, describeFailure, inputClass } from "./validation";
 
+// A select shows its first option while its state is "", so default to that
+// option - otherwise the form would submit a category the user never chose.
 const blankEntry = (fields) =>
-  Object.fromEntries(fields.map((f) => [f.name, f.type === "number" ? 0 : ""]));
+  Object.fromEntries(
+    fields.map((f) => [
+      f.name,
+      f.type === "number" ? 0 : f.type === "select" ? f.options[0] : "",
+    ])
+  );
 
-const FieldInput = ({ field, value, onChange }) => {
+// `showError` lets the "add" row stay quiet until a field is touched, while
+// rows that already hold values are validated straight away.
+const FieldInput = ({ field, value, onChange, onBlur, showError = true }) => {
+  const error = showError ? validateField(field, value) : "";
+  const shared = {
+    onBlur,
+    "aria-invalid": !!error,
+    className: `${inputClass(error)} w-full`,
+  };
+
+  let control;
   if (field.type === "select") {
-    return (
-      <select
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        className="bg-body_bg text-fg rounded px-2 py-1 outline-none flex-1 min-w-0"
-      >
+    control = (
+      <select value={value ?? ""} onChange={(e) => onChange(e.target.value)} {...shared}>
         {field.options.map((opt) => (
           <option key={opt} value={opt}>
             {opt}
@@ -21,10 +36,8 @@ const FieldInput = ({ field, value, onChange }) => {
         ))}
       </select>
     );
-  }
-
-  if (field.type === "number") {
-    return (
+  } else if (field.type === "number") {
+    control = (
       <input
         type="number"
         placeholder={field.label}
@@ -32,19 +45,26 @@ const FieldInput = ({ field, value, onChange }) => {
         max={field.max}
         value={value ?? 0}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="bg-body_bg text-fg rounded px-2 py-1 outline-none w-20"
+        {...shared}
+      />
+    );
+  } else {
+    control = (
+      <input
+        type={field.type === "date" ? "date" : "text"}
+        placeholder={field.required ? `${field.label} *` : field.label}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        {...shared}
       />
     );
   }
 
   return (
-    <input
-      type={field.type === "date" ? "date" : "text"}
-      placeholder={field.label}
-      value={value ?? ""}
-      onChange={(e) => onChange(e.target.value)}
-      className="bg-body_bg text-fg rounded px-2 py-1 outline-none flex-1 min-w-0"
-    />
+    <div className={`flex flex-col gap-1 ${field.type === "number" ? "w-24" : "flex-1 min-w-0"}`}>
+      {control}
+      <FieldHint field={field} value={value} error={error} />
+    </div>
   );
 };
 
@@ -58,6 +78,8 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
   const { showToast } = useToast();
   const [rows, setRows] = useState(entries);
   const [newEntry, setNewEntry] = useState(blankEntry(fields));
+  const [touched, setTouched] = useState({});
+  const [attempted, setAttempted] = useState(false);
 
   useEffect(() => {
     setRows(entries);
@@ -71,14 +93,15 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
   };
 
   const saveRow = (row) => {
+    if (Object.keys(validateAll(fields, row)).length) return;
     setBusy(true);
     authFetch(`${endpoint}${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(Object.fromEntries(fields.map((f) => [f.name, row[f.name]]))),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Save failed");
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await describeFailure("Save failed", res));
         onChange();
       })
       .catch((err) => showToast(err.message))
@@ -87,15 +110,21 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
 
   const addRow = (e) => {
     e.preventDefault();
+    if (Object.keys(validateAll(fields, newEntry)).length) {
+      setAttempted(true);
+      return;
+    }
     setBusy(true);
     authFetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [parentField]: parentId, ...newEntry }),
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Create failed");
+      .then(async (res) => {
+        if (!res.ok) throw new Error(await describeFailure("Create failed", res));
         setNewEntry(blankEntry(fields));
+        setTouched({});
+        setAttempted(false);
         onChange();
       })
       .catch((err) => showToast(err.message))
@@ -124,7 +153,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
 
       <div className="flex flex-col gap-3">
         {rows.map((row) => (
-          <div key={row.id} className="flex flex-wrap gap-2 items-center bg-body_bg/40 rounded p-2">
+          <div key={row.id} className="flex flex-wrap gap-2 items-start bg-body_bg/40 rounded p-2">
             {fields.map((field) => (
               <FieldInput
                 key={field.name}
@@ -136,8 +165,8 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
             <button
               type="button"
               onClick={() => saveRow(row)}
-              disabled={busy}
-              className="text-text_color text-sm px-2 py-1"
+              disabled={busy || Object.keys(validateAll(fields, row)).length > 0}
+              className="text-text_color text-sm px-2 py-1 disabled:opacity-40"
             >
               Save
             </button>
@@ -147,7 +176,7 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
                 setDeleteTarget(row);
                 setDeleteConfirmText("");
               }}
-              className="text-fg/60 hover:text-red-500"
+              className="text-fg/60 hover:text-red-500 mt-2"
               aria-label={`Delete ${title} entry`}
             >
               <HiTrash />
@@ -156,13 +185,18 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         ))}
       </div>
 
-      <form onSubmit={addRow} className="flex flex-wrap gap-2 items-center mt-4 border-t border-fg/10 pt-4">
+      <form onSubmit={addRow} noValidate className="flex flex-wrap gap-2 items-start mt-4 border-t border-fg/10 pt-4">
         {fields.map((field) => (
           <FieldInput
             key={field.name}
             field={field}
             value={newEntry[field.name]}
-            onChange={(v) => setNewEntry((prev) => ({ ...prev, [field.name]: v }))}
+            showError={attempted || touched[field.name]}
+            onBlur={() => setTouched((prev) => ({ ...prev, [field.name]: true }))}
+            onChange={(v) => {
+              setTouched((prev) => ({ ...prev, [field.name]: true }));
+              setNewEntry((prev) => ({ ...prev, [field.name]: v }));
+            }}
           />
         ))}
         <button

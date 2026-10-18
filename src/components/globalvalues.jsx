@@ -21,7 +21,7 @@ export const portfolio_categories = [
   "WebDev", "DataScience", "AI", "MachineLearning", "ComputerVision", "NLP",
   "Cybersecurity", "UIUX", "ProductManagement", "CloudComputing", "Robotics",
   "IoT", "BigData", "Blockchain", "MobileDev", "QA", "SoftwareEng",
-  "DataAnalysis", "DatabaseAdmin", "NetworkEng", "Marketing",
+  "DataAnalysis", "DatabaseAdmin", "NetworkEng", "CAD", "Marketing",
   "DigitalMarketing", "SocialMedia", "ContentMarketing", "Sales",
   "PublicRelations", "Advertising", "BrandManagement", "ProductMarketing",
   "AgriMarketing", "HumanResources", "Finance", "Accounting", "Banking",
