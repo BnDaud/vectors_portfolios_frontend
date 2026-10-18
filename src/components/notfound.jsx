@@ -1,8 +1,17 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useSeo, SITE_NAME } from "./seo";
 
 const NotFound404 = () => {
   const navigate = useNavigate();
+  // The server answers every path with the app shell, so mark unknown URLs
+  // noindex to keep them out of search results.
+  useSeo({
+    title: `Page not found | ${SITE_NAME}`,
+    description: "This page does not exist.",
+    path: window.location.pathname,
+    noindex: true,
+  });
 
   return (
     <div className="min-h-screen flex items-center justify-center px-5">

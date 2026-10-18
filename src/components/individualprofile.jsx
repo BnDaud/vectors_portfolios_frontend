@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { HiPencil, HiTrash } from "react-icons/hi";
-import { FiLogIn, FiLogOut } from "react-icons/fi";
-import { all_profiles_url, api_base_url, owner_username } from "./globalvalues";
+import { FiLogIn, FiLogOut, FiKey } from "react-icons/fi";
+import { all_profiles_url, api_base_url, owner_username, site_url } from "./globalvalues";
+import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
 import Notyetloader from "./notyetloaded";
+import VisitorsSection from "./visitorsSection";
 import GoalsSection from "./goalsSection";
 import ThemeToggle from "./themeToggle";
 import Logo from "./logo";
@@ -16,6 +18,13 @@ import { validateField, describeFailure, inputClass } from "./validation";
 
 // The landing page image is the owner profile's display_pic - same rules as
 // any other dp (required, full URL, 200 characters).
+// The owner's account forms (landing image, password) use pill-shaped, roomier inputs.
+const ACCOUNT_INPUT_SHAPE = "rounded-full px-5 py-2.5";
+
+// Mirrors Django's MinimumLengthValidator; the server also rejects common,
+// all-numeric and username-like passwords and says why.
+const PASSWORD_MIN_LENGTH = 8;
+
 const LANDING_IMAGE_FIELD = PROFILE_FIELDS.find((f) => f.name === "display_pic");
 
 const OwnerRoot = () => {
@@ -29,6 +38,11 @@ const OwnerRoot = () => {
   const [formError, setFormError] = useState("");
   const [editingTrackId, setEditingTrackId] = useState(null);
   const [editingName, setEditingName] = useState("");
+  const [editingPassword, setEditingPassword] = useState(false);
+  const [passwords, setPasswords] = useState({ current: "", next: "", confirm: "" });
+  const [passwordServerErrors, setPasswordServerErrors] = useState({});
+  const [passwordFormError, setPasswordFormError] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
   const [editingLanding, setEditingLanding] = useState(false);
   const [landingUrl, setLandingUrl] = useState("");
   const [landingError, setLandingError] = useState("");
@@ -37,7 +51,7 @@ const OwnerRoot = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, username, authFetch, logout } = useAuth();
+  const { isAuthenticated, username, authFetch, logout, changePassword } = useAuth();
 
   const fetchProfile = () => {
     fetch(`${all_profiles_url}?username=${owner_username}`)
@@ -57,6 +71,32 @@ const OwnerRoot = () => {
     fetchProfile();
     fetchGoals();
   }, []);
+
+  const ownerName = profile
+    ? `${profile.user.first_name} ${profile.user.last_name}`.trim() || profile.user.username
+    : "";
+  const seoTracks = profile?.tracks || [];
+  const landingDescription = clip(
+    seoTracks.length
+      ? `Portfolio of ${ownerName}: ${seoTracks.map((t) => t.name).join(", ")}. Explore projects, experience, education and skills.`
+      : `Portfolio of ${ownerName}. Explore projects, experience, education and skills.`
+  );
+  useSeo({
+    enabled: !!profile,
+    title: `${ownerName} – Portfolio | ${SITE_NAME}`,
+    description: landingDescription,
+    path: "/",
+    jsonLd:
+      profile &&
+      personSchema({
+        name: ownerName,
+        url: `${site_url}/`,
+        jobTitle: seoTracks[0]?.about?.skill,
+        description: landingDescription,
+        image: profile.display_pic,
+        sameAs: [profile.github, profile.linkedin, profile.twitter, profile.facebook].filter(Boolean),
+      }),
+  });
 
   if (!profile) return <Notyetloader />;
 
@@ -118,6 +158,7 @@ const OwnerRoot = () => {
   };
 
   const startLandingEdit = () => {
+    setEditingPassword(false);
     setLandingUrl(profile.display_pic || "");
     setLandingError("");
     setEditingLanding(true);
@@ -141,6 +182,48 @@ const OwnerRoot = () => {
       })
       .catch((err) => setLandingError(err.message))
       .finally(() => setSavingLanding(false));
+  };
+
+  const passwordErrors = {
+    current: passwords.current ? "" : "Required",
+    next:
+      passwords.next.length < PASSWORD_MIN_LENGTH
+        ? `At least ${PASSWORD_MIN_LENGTH} characters`
+        : passwords.next === passwords.current
+          ? "Must differ from the current password"
+          : "",
+    confirm: passwords.confirm === passwords.next ? "" : "Does not match the new password",
+  };
+  const passwordInvalid = Object.values(passwordErrors).some(Boolean);
+
+  const openPasswordForm = () => {
+    setEditingLanding(false);
+    setPasswords({ current: "", next: "", confirm: "" });
+    setPasswordServerErrors({});
+    setPasswordFormError("");
+    setEditingPassword(true);
+  };
+
+  const savePassword = (e) => {
+    e.preventDefault();
+    if (passwordInvalid) return;
+
+    setSavingPassword(true);
+    setPasswordServerErrors({});
+    setPasswordFormError("");
+    changePassword(passwords.current, passwords.next)
+      .then(() => {
+        setEditingPassword(false);
+        setPasswords({ current: "", next: "", confirm: "" });
+        showToast("Password changed", "success");
+      })
+      .catch((err) => {
+        setPasswordServerErrors(err.fieldErrors || {});
+        if (!err.fieldErrors?.current_password && !err.fieldErrors?.new_password) {
+          setPasswordFormError(err.message);
+        }
+      })
+      .finally(() => setSavingPassword(false));
   };
 
   const openDeleteModal = (e, track) => {
@@ -191,7 +274,12 @@ const OwnerRoot = () => {
       <div className="mt-5 mx-5 sm:mx-10 pb-10">
         <div className="flex flex-col items-center text-center mb-10">
           <div className="relative mb-4">
-            <Avatar src={profile.display_pic} label={profile.user.username} className="h-32 w-32" />
+            <Avatar
+              src={profile.display_pic}
+              label={`${profile.user.first_name} ${profile.user.last_name}`.trim() || profile.user.username}
+              className="h-32 w-32"
+              priority
+            />
             {isAuthenticated && !editingLanding && (
               <button
                 type="button"
@@ -208,7 +296,7 @@ const OwnerRoot = () => {
             <form
               onSubmit={saveLandingImage}
               noValidate
-              className="w-full max-w-md mb-4 flex flex-col gap-1 text-left"
+              className="w-full max-w-md mb-4 flex flex-col gap-2 text-left bg-frame_bg border border-frame_border shadow-sm rounded-2xl p-5 sm:p-6"
             >
               <label className="text-fg/60 text-xs">
                 Landing page image URL<span className="text-red-500"> *</span>
@@ -219,7 +307,7 @@ const OwnerRoot = () => {
                 value={landingUrl}
                 onChange={(e) => setLandingUrl(e.target.value)}
                 aria-invalid={!!validateField(LANDING_IMAGE_FIELD, landingUrl)}
-                className={inputClass(validateField(LANDING_IMAGE_FIELD, landingUrl))}
+                className={inputClass(validateField(LANDING_IMAGE_FIELD, landingUrl), ACCOUNT_INPUT_SHAPE)}
               />
               <FieldHint
                 field={LANDING_IMAGE_FIELD}
@@ -245,6 +333,76 @@ const OwnerRoot = () => {
             {profile.user.first_name} {profile.user.last_name}
           </h1>
           <p className="text-fg mt-2">Choose a portfolio to view</p>
+          {isAuthenticated && !editingPassword && (
+            <button
+              type="button"
+              onClick={openPasswordForm}
+              className="mt-3 flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-frame_border text-fg/70 hover:text-text_color hover:border-text_color/40 transition-colors"
+            >
+              <FiKey />
+              Change password
+            </button>
+          )}
+
+          {isAuthenticated && editingPassword && (
+            <form
+              onSubmit={savePassword}
+              noValidate
+              className="w-full max-w-md mt-4 flex flex-col gap-3.5 text-left bg-frame_bg border border-frame_border shadow-sm rounded-2xl p-5 sm:p-6"
+            >
+              <h2 className="text-text_color font-semibold">Change password</h2>
+              {[
+                ["current", "Current password", "current-password"],
+                ["next", "New password", "new-password"],
+                ["confirm", "Confirm new password", "new-password"],
+              ].map(([key, label, autoComplete]) => {
+                const serverError =
+                  key === "current"
+                    ? passwordServerErrors.current_password
+                    : key === "next"
+                      ? passwordServerErrors.new_password
+                      : null;
+                const error = (passwords[key] || serverError) && passwordErrors[key] ? passwordErrors[key] : "";
+                const shown = error || (serverError ? serverError.join(" ") : "");
+                return (
+                  <div key={key} className="flex flex-col gap-1">
+                    <label className="text-fg/60 text-xs">
+                      {label}
+                      <span className="text-red-500"> *</span>
+                    </label>
+                    <input
+                      type="password"
+                      autoComplete={autoComplete}
+                      value={passwords[key]}
+                      onChange={(e) => {
+                        setPasswords((prev) => ({ ...prev, [key]: e.target.value }));
+                        setPasswordServerErrors({});
+                      }}
+                      aria-invalid={!!shown}
+                      className={inputClass(shown, ACCOUNT_INPUT_SHAPE)}
+                    />
+                    {shown && <p className="text-red-500 text-xs">{shown}</p>}
+                  </div>
+                );
+              })}
+              {passwordFormError && <p className="text-red-500 text-xs">{passwordFormError}</p>}
+              <p className="text-fg/50 text-xs">
+                Changing it signs you out everywhere else.
+              </p>
+              <div className="flex gap-3 justify-end">
+                <button type="button" className="btn-ghost" onClick={() => setEditingPassword(false)}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingPassword || passwordInvalid}
+                  className="btn-primary disabled:opacity-50"
+                >
+                  {savingPassword ? "Saving..." : "Change password"}
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-6 justify-center">
@@ -254,7 +412,6 @@ const OwnerRoot = () => {
               data-track-slug={track.slug}
               role="link"
               tabIndex={0}
-              aria-label={`Open ${track.name} portfolio`}
               onClick={() => navigate(`/${track.slug}`)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && e.target === e.currentTarget) navigate(`/${track.slug}`);
@@ -265,6 +422,7 @@ const OwnerRoot = () => {
                 src={track.display_pic || profile.display_pic}
                 label={track.name}
                 className="h-24 w-24"
+                decorative
               />
 
               {isAuthenticated && (
@@ -307,9 +465,9 @@ const OwnerRoot = () => {
                       className="bg-body_bg text-text_color text-lg font-semibold rounded px-2 py-1 w-full outline-none"
                     />
                   ) : (
-                    <h3 className="text-text_color text-lg font-semibold truncate">
+                    <h2 className="text-text_color text-lg font-semibold truncate">
                       {track.name}
-                    </h3>
+                    </h2>
                   )}
                   <p className="text-fg/60 font-medium line-clamp-2">{track.about?.skill}</p>
                 </div>
@@ -444,6 +602,9 @@ const OwnerRoot = () => {
             }}
           />
         )}
+
+        {/* Owner-only: who has visited, never including the owner's own visits */}
+        {isAuthenticated && <VisitorsSection />}
       </div>
     </div>
   );

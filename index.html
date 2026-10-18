@@ -3,7 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>VectoredMatrix</title>
+
+    <!-- Search / link-preview defaults (the home page). Each route refines
+         these at runtime - see src/components/seo.js. __SITE_URL__ is filled
+         in at build time from VITE_SITE_URL (see vite.config.js). -->
+    <title>Sulaimon Lawal – Portfolio | VectoredMatrix</title>
+    <meta
+      name="description"
+      content="Portfolio of Sulaimon Lawal, a Full Stack Developer and tech enthusiast. Explore projects, experience, education and skills across several specialities."
+    />
+    <meta name="author" content="Sulaimon Lawal" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <link rel="canonical" href="__SITE_URL__/" />
+    <meta name="theme-color" content="#f7f7fa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#08080b" media="(prefers-color-scheme: dark)" />
 
     <!-- Favicon - matches OS-level color scheme (separate from the site's
          own in-page theme toggle, since a <link> tag can't react to that) -->
@@ -24,34 +37,59 @@
       type="image/png"
       href="https://jeuuxtzqlrzaqslthhxx.supabase.co/storage/v1/object/public/branding/logo-icon-light.png"
     />
+    <link
+      rel="apple-touch-icon"
+      href="https://jeuuxtzqlrzaqslthhxx.supabase.co/storage/v1/object/public/branding/logo-icon-light.png"
+    />
+
+    <!-- Open the connections the page always needs before the JS asks for them -->
+    <link rel="preconnect" href="https://jeuuxtzqlrzaqslthhxx.supabase.co" crossorigin />
+    <link rel="preconnect" href="https://i.imgur.com" crossorigin />
+    <link rel="preconnect" href="__API_ORIGIN__" crossorigin />
 
     <!-- Open Graph / Link Preview -->
-    <meta property="og:title" content="VectoredMatrix" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="VectoredMatrix" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:url" content="__SITE_URL__/" />
+    <meta property="og:title" content="Sulaimon Lawal – Portfolio | VectoredMatrix" />
     <meta
       property="og:description"
-      content="Full Stack Developer & Tech Enthusiast"
+      content="Portfolio of Sulaimon Lawal, a Full Stack Developer and tech enthusiast. Explore projects, experience, education and skills across several specialities."
     />
-    <meta
-      property="og:image"
-      content="https://yourdomain.com/professional.png"
-    />
-    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image" content="__SITE_URL__/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:url" content="https://yourdomain.com/" />
-    <meta property="og:type" content="website" />
+    <meta
+      property="og:image:alt"
+      content="Sulaimon Lawal – Full Stack Developer and Tech Enthusiast"
+    />
 
-    <!-- Optional: Twitter Card -->
+    <!-- Twitter / X card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="VectoredMatrix" />
+    <meta name="twitter:title" content="Sulaimon Lawal – Portfolio | VectoredMatrix" />
     <meta
       name="twitter:description"
-      content="Full Stack Developer & Tech Enthusiast"
+      content="Portfolio of Sulaimon Lawal, a Full Stack Developer and tech enthusiast. Explore projects, experience, education and skills across several specialities."
     />
+    <meta name="twitter:image" content="__SITE_URL__/og-image.jpg" />
     <meta
-      name="twitter:image"
-      content="https://yourdomain.com/professional.png"
+      name="twitter:image:alt"
+      content="Sulaimon Lawal – Full Stack Developer and Tech Enthusiast"
     />
+
+    <!-- Structured data: the site itself. The person/portfolio data is added
+         per page at runtime from the API. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "VectoredMatrix",
+        "url": "__SITE_URL__/",
+        "inLanguage": "en"
+      }
+    </script>
   </head>
 
   <body>
@@ -68,6 +106,15 @@
       })();
     </script>
     <div id="root"></div>
+    <noscript>
+      <main style="font-family: sans-serif; max-width: 40rem; margin: 3rem auto; padding: 0 1rem">
+        <h1>Sulaimon Lawal – Full Stack Developer &amp; Tech Enthusiast</h1>
+        <p>
+          This portfolio shows projects, experience, education and skills for several
+          specialities. It needs JavaScript to load - please enable it to view the portfolios.
+        </p>
+      </main>
+    </noscript>
 
     <script type="module" src="/src/main.jsx"></script>
   </body>

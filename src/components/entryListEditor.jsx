@@ -36,6 +36,16 @@ const FieldInput = ({ field, value, onChange, onBlur, showError = true }) => {
         ))}
       </select>
     );
+  } else if (field.type === "textarea") {
+    control = (
+      <textarea
+        rows={2}
+        placeholder={field.label}
+        value={value ?? ""}
+        onChange={(e) => onChange(e.target.value)}
+        {...shared}
+      />
+    );
   } else if (field.type === "number") {
     control = (
       <input
@@ -61,7 +71,15 @@ const FieldInput = ({ field, value, onChange, onBlur, showError = true }) => {
   }
 
   return (
-    <div className={`flex flex-col gap-1 ${field.type === "number" ? "w-24" : "flex-1 min-w-0"}`}>
+    <div
+      className={`flex flex-col gap-1 ${
+        field.type === "number"
+          ? "w-24"
+          : field.fullWidth
+            ? "w-full basis-full order-last"
+            : "flex-1 min-w-0"
+      }`}
+    >
       {control}
       <FieldHint field={field} value={value} error={error} />
     </div>

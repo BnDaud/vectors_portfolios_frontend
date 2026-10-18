@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./authContext";
+import { useSeo, SITE_NAME } from "./seo";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -9,6 +10,7 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  useSeo({ title: `Sign in | ${SITE_NAME}`, description: "Owner sign-in.", path: "/login", noindex: true });
 
   const handleSubmit = (e) => {
     e.preventDefault();

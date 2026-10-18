@@ -5,6 +5,16 @@ import { portfolio_categories } from "./globalvalues";
 // "required" means the backend rejects a blank value (blank=False).
 const URL_RULES = { url: true, maxLength: 200 };
 
+// Optional short note shown on the resume board; the cap matches the backend
+// (ENTRY_DESCRIPTION_MAX) and keeps the board from being overrun.
+const ENTRY_DESCRIPTION = {
+  name: "description",
+  label: "Short description (optional)",
+  type: "textarea",
+  fullWidth: true,
+  maxLength: 240,
+};
+
 export const PROFILE_FIELDS = [
   { name: "display_pic", label: "Display picture URL", required: true, ...URL_RULES },
   { name: "github", label: "GitHub", ...URL_RULES },
@@ -44,6 +54,7 @@ export const RESUME_FIELDS = [
   { name: "start_year", label: "Start", type: "date", required: true },
   { name: "end_year", label: "End", type: "date", required: true },
   { name: "certificate_link", label: "Certificate link (optional)", type: "text", ...URL_RULES },
+  ENTRY_DESCRIPTION,
 ];
 
 export const SCHOOL_FIELDS = [
@@ -51,12 +62,14 @@ export const SCHOOL_FIELDS = [
   { name: "start_year", label: "Start", type: "date", required: true },
   { name: "end_year", label: "End", type: "date", required: true },
   { name: "certificate_link", label: "Certificate link (optional)", type: "text", ...URL_RULES },
+  ENTRY_DESCRIPTION,
 ];
 
 export const PROFICIENCY_FIELDS = [
   { name: "skill_name", label: "Skill", type: "text", required: true, maxLength: 50 },
   { name: "skill_range", label: "Level (0-100)", type: "number", min: 0, max: 100 },
   { name: "certificate_link", label: "Certificate link (optional)", type: "text", ...URL_RULES },
+  ENTRY_DESCRIPTION,
 ];
 
 export const PORTFOLIO_FIELDS = [

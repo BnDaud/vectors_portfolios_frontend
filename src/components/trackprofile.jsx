@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { all_profiles_url } from "./globalvalues";
+import { all_profiles_url, site_url } from "./globalvalues";
+import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { useAuth } from "./authContext";
 import Home from "./Sections/home";
 import Portfolio from "./Sections/portfolio";
@@ -32,9 +33,38 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username]);
 
-  if (!profile) return <Notyetloader />;
+  const track = profile?.tracks?.find((t) => t.slug === trackSlug);
+  const fullName = profile
+    ? `${profile.user.first_name} ${profile.user.last_name}`.trim() || profile.user.username
+    : "";
+  const pageDescription = track
+    ? clip(
+        track.about?.description ||
+          `${fullName} - ${track.name} portfolio: experience, education, skills and projects.`
+      )
+    : "";
 
-  const track = profile.tracks?.find((t) => t.slug === trackSlug);
+  useSeo({
+    // While loading keep the home-page defaults; an unknown slug is handled
+    // (noindex) by the 404 page itself.
+    enabled: !!track,
+    title: `${track?.name} Portfolio – ${fullName} | ${SITE_NAME}`,
+    description: pageDescription,
+    path: `/${trackSlug}`,
+    jsonLd:
+      track &&
+      personSchema({
+        name: fullName,
+        url: `${site_url}/${trackSlug}`,
+        jobTitle: track.about?.skill,
+        description: pageDescription,
+        image: track.display_pic || profile.display_pic,
+        sameAs: [track.github, track.linkedin, track.twitter, track.facebook].filter(Boolean),
+        knowsAbout: track.about?.proficiency?.map((p) => p.skill_name),
+      }),
+  });
+
+  if (!profile) return <Notyetloader />;
 
   if (!track) return <NotFound404 />;
 
@@ -65,7 +95,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
             />
           </div>
           <div ref={refs?.about} className="scroll-mt-20">
-            <About username={username} about={track.about} />
+            <About username={username} name={fullName} about={track.about} />
           </div>
           <div ref={refs?.resume} className="scroll-mt-20">
             <Resume username={username} trackName={track.name} about={track.about} />

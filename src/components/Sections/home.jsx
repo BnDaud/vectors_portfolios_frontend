@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 
 const Home = ({
-  username,
   img,
   user: { first_name, last_name },
   about: { skill },
@@ -22,14 +21,15 @@ const Home = ({
         style={{ background: "var(--color-new_color)" }}
       />
 
-      <div className="relative">
-        <p className="text-fg font-bold uppercase text-xl sm:text-3xl">
+      {/* The page's single h1: who this is and what they do */}
+      <h1 className="relative">
+        <span className="block text-fg font-bold uppercase text-xl sm:text-3xl">
           I am {last_name} {first_name}
-        </p>
-        <p className="text-4xl sm:text-6xl text-text_color font-bold capitalize mt-6 sm:mt-12">
+        </span>
+        <span className="block text-4xl sm:text-6xl text-text_color font-bold capitalize mt-6 sm:mt-12">
           {skill}
-        </p>
-      </div>
+        </span>
+      </h1>
 
       {/* Image block for tablet+ screens only */}
       <div className="relative hidden w-full sm:w-1/3 md:flex justify-center sm:justify-end mt-6 sm:mt-0 mr-5 sm:mr-10">
@@ -41,7 +41,8 @@ const Home = ({
         >
           <img
             src={img}
-            alt={username}
+            alt={`${first_name} ${last_name}, ${skill}`}
+            fetchPriority="high"
             className="w-full h-full object-cover -rotate-45 scale-150"
           />
         </motion.div>

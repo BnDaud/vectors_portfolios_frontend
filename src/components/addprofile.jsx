@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import RingLoader from "react-spinners/RingLoader";
+import { useSeo, SITE_NAME } from "./seo";
 
 const AddProfile = () => {
   const navigate = useNavigate();
+  useSeo({ title: `Coming soon | ${SITE_NAME}`, description: "Coming soon.", path: "/addprofile", noindex: true });
   return (
     <>
       <div className="flex items-center h-96  justify-center ">

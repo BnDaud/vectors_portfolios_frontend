@@ -61,6 +61,27 @@ export const AuthProvider = ({ children }) => {
       setUsername(null);
     });
 
+  // Throws an Error carrying `fieldErrors` ({current_password: [...], new_password: [...]})
+  // when the server rejects it. On success the server re-issues this
+  // session's cookies, so nothing else needs doing here.
+  const changePassword = async (currentPassword, newPassword) => {
+    const res = await authFetch(`${api_base_url}/auth/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
+    });
+    if (res.ok) return;
+
+    const body = await res.json().catch(() => ({}));
+    const error = new Error(
+      res.status === 429
+        ? "Too many attempts - wait a minute and try again."
+        : body.detail || "Password not changed."
+    );
+    error.fieldErrors = body;
+    throw error;
+  };
+
   const refresh = () =>
     fetch(`${api_base_url}/auth/refresh`, {
       method: "POST",
@@ -100,7 +121,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, username, ready, login, logout, authFetch }}
+      value={{ isAuthenticated, username, ready, login, logout, authFetch, changePassword }}
     >
       {children}
     </AuthContext.Provider>

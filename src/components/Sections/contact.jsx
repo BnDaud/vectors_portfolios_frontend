@@ -24,9 +24,9 @@ const Contact = ({ username, contact }) => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="mt-5 bg-frame_bg border border-frame_border rounded-2xl shadow-xl mx-5 sm:mx-10"
     >
-      <h4 className="text-text_color text-2xl pt-6 pl-5 sm:pl-10 font-semibold">
+      <h2 className="text-text_color text-2xl pt-6 pl-5 sm:pl-10 font-semibold">
         Contact Me
-      </h4>
+      </h2>
 
       <div className="flex flex-col md:flex-row px-5 sm:px-10 py-5 gap-10">
         {/* Left Section */}
@@ -35,27 +35,48 @@ const Contact = ({ username, contact }) => {
             Realize your dream with us
           </p>
           <div className="flex flex-wrap gap-3">
-            <a href={contact?.facebook} target="_blank" rel="noopener noreferrer" className={SOCIAL_ICON_CLASS}>
-              <FaFacebookF />
-            </a>
-            <a href={contact?.whatapp} target="_blank" rel="noopener noreferrer" className={SOCIAL_ICON_CLASS}>
-              <FaWhatsapp />
-            </a>
-            <a href={contact?.github} target="_blank" rel="noopener noreferrer" className={SOCIAL_ICON_CLASS}>
-              <FaGithub />
-            </a>
-            <a href={`mailto:${contact.email}?subject=Hello&body=Hi there!`} className={SOCIAL_ICON_CLASS}>
-              <FaGoogle />
-            </a>
-            <a href={contact?.linkedin} target="_blank" rel="noopener noreferrer" className={SOCIAL_ICON_CLASS}>
-              <FaLinkedinIn />
-            </a>
-            <a href={contact?.twitter} target="_blank" rel="noopener noreferrer" className={SOCIAL_ICON_CLASS}>
-              <FaTwitter />
-            </a>
-            <a href={contact.phone_number} target="_blank" rel="noopener noreferrer" className={SOCIAL_ICON_CLASS}>
-              <FaPhone className="rotate-90" />
-            </a>
+            {/* A link only renders when this portfolio has the address, so there are no dead icons */}
+            {[
+              ["Facebook", contact?.facebook, <FaFacebookF key="f" />],
+              ["WhatsApp", contact?.whatapp, <FaWhatsapp key="w" />],
+              ["GitHub", contact?.github, <FaGithub key="g" />],
+            ].map(
+              ([label, href, icon]) =>
+                href && (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={SOCIAL_ICON_CLASS}>
+                    {icon}
+                  </a>
+                )
+            )}
+            {contact?.email && (
+              <a
+                href={`mailto:${contact.email}?subject=Hello&body=Hi there!`}
+                aria-label="Email"
+                className={SOCIAL_ICON_CLASS}
+              >
+                <FaGoogle />
+              </a>
+            )}
+            {[
+              ["LinkedIn", contact?.linkedin, <FaLinkedinIn key="l" />],
+              ["Twitter", contact?.twitter, <FaTwitter key="t" />],
+            ].map(
+              ([label, href, icon]) =>
+                href && (
+                  <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={SOCIAL_ICON_CLASS}>
+                    {icon}
+                  </a>
+                )
+            )}
+            {contact?.phone_number && (
+              <a
+                href={`tel:${contact.phone_number.replace(/[^\d+]/g, "")}`}
+                aria-label="Call"
+                className={SOCIAL_ICON_CLASS}
+              >
+                <FaPhone className="rotate-90" />
+              </a>
+            )}
           </div>
         </div>
 

@@ -19,9 +19,9 @@ const Portfolio = ({ username, portfolio }) => {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className="mt-5 bg-frame_bg border border-frame_border rounded-2xl shadow-xl mx-5 sm:mx-10 pb-6"
     >
-      <h4 className="text-text_color text-center text-2xl pt-6 font-semibold">
+      <h2 className="text-text_color text-center text-2xl pt-6 font-semibold">
         My Portfolio
-      </h4>
+      </h2>
       <div className="mt-5">
         <div className="flex flex-wrap gap-2 justify-center px-2">
           <button
@@ -63,9 +63,12 @@ const Portfolio = ({ username, portfolio }) => {
             transition={{ duration: 0.4, delay: i * 0.05 }}
             className="group block relative w-72 h-72 overflow-hidden rounded-xl border border-frame_border shadow-lg"
           >
-            <div
-              className="absolute inset-0 bg-center bg-cover transition-transform duration-300 group-hover:scale-110"
-              style={{ backgroundImage: `url(${p.thumbnail})` }}
+            <img
+              src={p.thumbnail}
+              alt={`${p.name} - ${p.category} project`}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
             <div className="absolute left-4 bottom-4 right-4 text-white">

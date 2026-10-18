@@ -1,6 +1,10 @@
 export const api_base_url =
   import.meta.env.VITE_API_URL || "https://vectoredmatrix.pythonanywhere.com/api_root";
 
+// Public address of this site, used for canonical URLs, the sitemap and link
+// previews. Set VITE_SITE_URL if it moves to a custom domain.
+export const site_url = (import.meta.env.VITE_SITE_URL || "https://vectoredmatrix.vercel.app").replace(/\/$/, "");
+
 export const all_profiles_url = `${api_base_url}/profiles/`;
 
 // This site is single-owner: every route resolves to this one profile.

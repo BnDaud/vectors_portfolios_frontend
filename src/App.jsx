@@ -8,6 +8,7 @@ import Login from "./components/login";
 import { AuthProvider } from "./components/authContext";
 import { ToastProvider } from "./components/toastContext";
 import { ThemeProvider } from "./components/themeContext";
+import VisitTracker from "./components/visitTracker";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
+            <VisitTracker />
             <div className="bg-body_bg min-h-screen">
               <Routes>
                 <Route path="/" element={<OwnerRoot />} />

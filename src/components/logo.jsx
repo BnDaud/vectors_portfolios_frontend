@@ -19,10 +19,16 @@ const Logo = ({ fullClassName = "h-11", iconClassName = "h-14", alwaysFull = fal
       <img
         src={fullSrc}
         alt="Vectored Matrix"
+        loading="lazy"
         className={`w-auto ${fullClassName} ${alwaysFull ? "block" : "hidden sm:block"}`}
       />
       {!alwaysFull && (
-        <img src={iconSrc} alt="Vectored Matrix" className={`sm:hidden w-auto ${iconClassName}`} />
+        <img
+          src={iconSrc}
+          alt="Vectored Matrix"
+          loading="lazy"
+          className={`sm:hidden w-auto ${iconClassName}`}
+        />
       )}
     </button>
   );

@@ -87,6 +87,12 @@ export const describeFailure = async (label, res) => {
   return `${label} (${res.status})`;
 };
 
-// Input styling shared by every form field; a red ring marks an invalid value.
-export const inputClass = (error) =>
-  `bg-body_bg text-fg rounded px-2 py-1 outline-none ${error ? "ring-1 ring-red-500" : ""}`;
+// Input styling shared by every form field. The outline matters: on the page
+// background (or any card in the same tone) a fill alone is invisible, in both
+// themes. A red ring marks an invalid value.
+// `shape` sets the corner radius and padding (the compact default suits the dense
+// editing rows; the account forms use something rounder and roomier).
+export const inputClass = (error, shape = "rounded px-2 py-1") =>
+  `bg-body_bg text-fg border border-fg/25 focus:border-text_color outline-none ${shape} ${
+    error ? "ring-1 ring-red-500" : ""
+  }`;
