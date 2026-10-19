@@ -3,8 +3,17 @@ import { api_base_url } from "./globalvalues";
 // Where the read-only copy of a portfolio's resume lives (opened in a new tab).
 export const resumeViewPath = (slug) => `/resume/${slug}`;
 
-export const resumePageUrl = (slug, page, version) =>
-  `${api_base_url}/resume-export/${slug}/pages/${page}.png${version ? `?v=${version}` : ""}`;
+export const resumePageUrl = (slug, page, version, template) => {
+  const query = [template && `template=${template}`, version && `v=${version}`].filter(Boolean).join("&");
+  return `${api_base_url}/resume-export/${slug}/pages/${page}.png${query ? `?${query}` : ""}`;
+};
+
+// How many pages a design has for this portfolio: {pages, version, template, ...}.
+export const fetchResumePages = async (slug, template) => {
+  const res = await fetch(`${api_base_url}/resume-export/${slug}/pages?template=${encodeURIComponent(template)}`);
+  if (!res.ok) throw new Error(res.status === 429 ? "Too many previews just now - try again in a few minutes." : `Could not load the preview (${res.status}).`);
+  return res.json();
+};
 
 // A small picture of a design's first page, for the owner's design picker.
 export const resumeThumbUrl = (slug, template) =>

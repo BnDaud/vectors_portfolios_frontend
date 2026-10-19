@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { FiDownload, FiEye, FiFileText } from "react-icons/fi";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
-import { downloadResume, fetchResumeTemplates, resumeThumbUrl, resumeViewPath } from "./resumeApi";
+import { downloadResume, fetchResumePages, fetchResumeTemplates, resumePageUrl, resumeThumbUrl, resumeViewPath } from "./resumeApi";
 import { attempt } from "./visitorId";
 
 const PILL =
@@ -84,6 +84,45 @@ const DesignCard = ({ design, slug, selected, onSelect }) => {
   );
 };
 
+// The chosen design, page by page and full size, so it can be looked over before it is downloaded.
+// It is always the PDF layout; the Word file carries the same content in the same order.
+const PreviewPane = ({ slug, design, kind }) => {
+  const [info, setInfo] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setInfo(null);
+    setError("");
+    fetchResumePages(slug, design.key)
+      .then((result) => !cancelled && setInfo(result))
+      .catch((err) => !cancelled && setError(err.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, design.key]);
+
+  return (
+    <div className="flex flex-col gap-3">
+      {kind === "docx" && (
+        <p className="text-fg/60 text-xs">The preview shows the PDF layout. The Word file has the same content, in the same order.</p>
+      )}
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+      {!info && !error && <p role="status" className="text-fg/60 text-sm py-10 text-center">Preparing the preview...</p>}
+      {info &&
+        Array.from({ length: info.pages }, (_, i) => i + 1).map((page) => (
+          <img
+            key={page}
+            src={resumePageUrl(slug, page, info.version, design.key)}
+            alt={`${design.label} design, page ${page} of ${info.pages}`}
+            draggable={false}
+            className="block w-full h-auto rounded-lg bg-white shadow-lg"
+          />
+        ))}
+    </div>
+  );
+};
+
 const readPick = () => {
   const raw = attempt(() => JSON.parse(localStorage.getItem(PICK_KEY) || "null"));
   return raw && typeof raw === "object" ? raw : {};
@@ -100,6 +139,12 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
   const [template, setTemplate] = useState("");
   const [kind, setKind] = useState("pdf");
   const [busy, setBusy] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
+
+  // switching between the designs and a preview starts the dialog from its top
+  useEffect(() => {
+    document.querySelector('[role="dialog"][aria-labelledby="resume-download-title"]')?.scrollTo?.({ top: 0 });
+  }, [previewing]);
 
   useEffect(() => {
     let cancelled = false;
@@ -142,15 +187,22 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
   };
 
   return (
-    <Modal titleId="resume-download-title" onClose={onClose} wide>
+    // Escape steps back out of a preview first, and only then closes the dialog
+    <Modal titleId="resume-download-title" onClose={previewing ? () => setPreviewing(false) : onClose} wide>
       <div>
         <h2 id="resume-download-title" className="text-text_color text-lg font-semibold">
-          Download resume
+          {previewing && current ? `Preview: ${current.label}` : "Download resume"}
         </h2>
-        <p className="text-fg/60 text-sm mt-1">Pick the design that fits where it is going. Everything comes from the portfolio page itself.</p>
+        <p className="text-fg/60 text-sm mt-1">
+          {previewing
+            ? "This is exactly what you will get."
+            : "Pick the design that fits where it is going. Everything comes from the portfolio page itself."}
+        </p>
       </div>
 
-      {tracks?.length > 1 && (
+      {previewing && current && <PreviewPane slug={slug} design={current} kind={kind} />}
+
+      {!previewing && tracks?.length > 1 && (
         <label className="flex flex-col gap-1 text-sm text-fg/80">
           Portfolio
           <select
@@ -171,6 +223,7 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
       {!designs && !failed && <p className="text-fg/60 text-sm">Loading designs...</p>}
 
       {designs &&
+        !previewing &&
         GROUPS.map((group) => (
           <fieldset key={group.key} className="min-w-0">
             <legend className="text-fg font-semibold">{group.title}</legend>
@@ -210,10 +263,21 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
             );
           })}
         </div>
-        <div className="flex gap-2.5">
-          <button type="button" className="btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
+        <div className="flex flex-wrap justify-end gap-2.5">
+          {previewing ? (
+            <button type="button" className="btn-ghost" onClick={() => setPreviewing(false)}>
+              Back to designs
+            </button>
+          ) : (
+            <>
+              <button type="button" className="btn-ghost" onClick={onClose}>
+                Cancel
+              </button>
+              <button type="button" disabled={!current} onClick={() => setPreviewing(true)} className={PILL_OUTLINE}>
+                <FiEye aria-hidden="true" /> Preview
+              </button>
+            </>
+          )}
           <button type="button" disabled={busy || !current} onClick={download} className={PILL_PRIMARY}>
             <FiDownload aria-hidden="true" /> {busy ? "Preparing..." : `Download ${kind === "pdf" ? "PDF" : "Word"}`}
           </button>
