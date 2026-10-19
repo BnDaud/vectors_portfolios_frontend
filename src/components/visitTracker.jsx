@@ -2,32 +2,12 @@ import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "./authContext";
 import { api_base_url } from "./globalvalues";
+import { attempt, getVisitorId, isOwnerBrowser, markOwnerBrowser } from "./visitorId";
 
-const VISITOR_KEY = "vm_visitor_id";
-const OWNER_KEY = "vm_owner_browser";
 const SKIP_PATHS = ["/login", "/addprofile"];
 // Matches the server's visit window: opening the same page again after this
 // long in one tab is a new visit; sooner than that it is the same one.
 const RESEND_AFTER_MS = 30 * 60 * 1000;
-
-// Storage can be blocked (private mode, strict settings) - then we simply don't count.
-const attempt = (fn) => {
-  try {
-    return fn();
-  } catch {
-    return null;
-  }
-};
-
-const getVisitorId = () =>
-  attempt(() => {
-    let id = localStorage.getItem(VISITOR_KEY);
-    if (!id) {
-      id = crypto.randomUUID();
-      localStorage.setItem(VISITOR_KEY, id);
-    }
-    return id;
-  });
 
 // Silent page-view counter. Sends only a random id this browser made up for
 // itself and the page opened - no personal data. It never counts:
@@ -42,10 +22,10 @@ const VisitTracker = () => {
     if (!ready) return; // don't know yet whether this is the owner
 
     if (isAuthenticated) {
-      attempt(() => localStorage.setItem(OWNER_KEY, "1"));
+      markOwnerBrowser();
       return;
     }
-    if (attempt(() => localStorage.getItem(OWNER_KEY)) === "1") return;
+    if (isOwnerBrowser()) return;
     if (navigator.doNotTrack === "1" || SKIP_PATHS.includes(pathname) || pathname.startsWith("/resume/")) return;
 
     const visitorId = getVisitorId();

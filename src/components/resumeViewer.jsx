@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useAuth } from "./authContext";
 import { api_base_url } from "./globalvalues";
 import { resumePageUrl } from "./resumeApi";
+import { getVisitorId, isOwnerBrowser } from "./visitorId";
 import { useSeo, SITE_NAME } from "./seo";
 import NotFound404 from "./notfound";
 import Notyetloader from "./notyetloaded";
@@ -17,6 +19,7 @@ const BLOCKED_KEYS = ["s", "p", "c", "x", "a"];
 // casual copying; it cannot stop a screenshot, which no website can.
 const ResumeViewer = () => {
   const { trackSlug } = useParams();
+  const { ready, isAuthenticated } = useAuth();
   const [info, setInfo] = useState(null);
   const [state, setState] = useState("loading"); // loading | ok | missing | busy | failed
 
@@ -39,6 +42,22 @@ const ResumeViewer = () => {
       cancelled = true;
     };
   }, [trackSlug]);
+
+  // Count this view once the resume has really loaded - but never the owner's own, nor "Do Not Track".
+  // Sends only the same random browser id the page-view counter uses, and which portfolio.
+  const loaded = state === "ok";
+  useEffect(() => {
+    if (!loaded || !ready || isAuthenticated || isOwnerBrowser() || navigator.doNotTrack === "1") return;
+    const visitorId = getVisitorId();
+    if (!visitorId) return;
+    fetch(`${api_base_url}/analytics/resume-view`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitor_id: visitorId, slug: trackSlug }),
+      keepalive: true,
+      credentials: "include", // lets the server recognise (and skip) a signed-in owner
+    }).catch(() => {});
+  }, [loaded, ready, isAuthenticated, trackSlug]);
 
   useEffect(() => {
     const stop = (e) => e.preventDefault();

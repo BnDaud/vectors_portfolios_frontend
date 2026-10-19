@@ -19,6 +19,10 @@ const timeAgo = (iso) => {
   return "just now";
 };
 
+// "19 Oct 2026, 14:32" in the owner's own time zone
+const when = (iso) =>
+  new Date(iso).toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+
 const Stat = ({ label, value, hint }) => (
   <div className="bg-body_bg rounded-xl p-4" title={hint}>
     <p className="text-text_color text-3xl font-bold leading-none">{value}</p>
@@ -120,6 +124,45 @@ const VisitorsSection = () => {
                 ))}
               </ul>
 
+              <h3 className="text-fg font-semibold mt-7 mb-1">Resume views</h3>
+              <p className="text-fg/60 text-xs mb-3">
+                Times the read-only resume was opened: {data.resume.total_views} by {data.resume.viewers}{" "}
+                {data.resume.viewers === 1 ? "person" : "people"}. Reopening it within half an hour counts once.
+              </p>
+              {data.resume.total_views === 0 ? (
+                <p className="text-fg/60 text-sm">Nobody has opened a resume yet.</p>
+              ) : (
+                <>
+                  <ul className="flex flex-col gap-2">
+                    {data.resume.portfolios.map((row) => (
+                      <li key={row.slug} className="flex flex-wrap justify-between gap-x-3 text-sm text-fg">
+                        <span className="truncate">{row.name}</span>
+                        <span className="text-fg/60 shrink-0">
+                          {row.views} {row.views === 1 ? "view" : "views"} · {row.viewers} {row.viewers === 1 ? "person" : "people"}
+                          {row.last_viewed && (
+                            <>
+                              {" "}
+                              · last <time dateTime={row.last_viewed} title={when(row.last_viewed)}>{timeAgo(row.last_viewed)}</time>
+                            </>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <ul className="flex flex-col gap-1.5 mt-4" aria-label="Latest resume views">
+                    {data.resume.recent.map((row, i) => (
+                      <li key={`${row.visitor}-${row.at}-${i}`} className="bg-body_bg rounded-lg px-4 py-2 text-sm flex flex-wrap items-center gap-x-3">
+                        <span className="text-fg font-semibold">Visitor #{row.visitor}</span>
+                        <span className="text-text_color">{row.name}</span>
+                        <time dateTime={row.at} className="text-fg/60 text-xs ml-auto">
+                          {when(row.at)}
+                        </time>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
               <h3 className="text-fg font-semibold mt-7 mb-3">Recent visitors</h3>
               <ul className="flex flex-col gap-2">
                 {data.recent.map((visitor) => (
@@ -145,6 +188,16 @@ const VisitorsSection = () => {
                         <span key={view.slug} className="text-xs px-2 py-0.5 rounded bg-text_color/15 text-text_color">
                           {view.name}
                           {view.visits > 1 ? ` ×${view.visits}` : ""}
+                        </span>
+                      ))}
+                      {visitor.resume_views.map((view) => (
+                        <span
+                          key={`resume-${view.slug}`}
+                          title={`Last opened ${when(view.last)}`}
+                          className="text-xs px-2 py-0.5 rounded border border-text_color/40 text-text_color"
+                        >
+                          Resume: {view.name}
+                          {view.views > 1 ? ` ×${view.views}` : ""}
                         </span>
                       ))}
                     </div>

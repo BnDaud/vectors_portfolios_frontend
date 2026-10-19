@@ -1,36 +1,229 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { FiDownload, FiEye, FiFileText } from "react-icons/fi";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
-import { downloadResume, resumeViewPath } from "./resumeApi";
+import { downloadResume, fetchResumeTemplates, resumeThumbUrl, resumeViewPath } from "./resumeApi";
+import { attempt } from "./visitorId";
 
 const PILL =
   "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 min-h-12 md:min-h-0 text-sm font-semibold transition-colors";
-const PILL_PRIMARY = `${PILL} bg-text_color text-body_bg hover:brightness-110`;
+const PILL_PRIMARY = `${PILL} bg-text_color text-body_bg hover:brightness-110 disabled:opacity-50`;
 const PILL_OUTLINE = `${PILL} border border-text_color/50 text-text_color hover:bg-text_color/10`;
 // the nav bar's version: same height as the login / logout button next to it
 const NAV_PILL =
   "inline-flex items-center gap-1.5 rounded-full border border-text_color/50 px-3 py-1.5 text-sm font-semibold text-text_color transition-colors hover:bg-text_color/10";
 
-// Owner: one tap per format. Pass an optional onDone to react after a download.
-const useDownload = (slug, onDone) => {
-  const { authFetch } = useAuth();
-  const { showToast } = useToast();
-  const [busy, setBusy] = useState("");
-  const start = (kind) => {
-    setBusy(kind);
-    downloadResume(authFetch, slug, kind)
-      .then((name) => {
-        showToast(`Downloaded ${name}`, "success");
-        onDone?.();
-      })
-      .catch((err) => showToast(err.message))
-      .finally(() => setBusy(""));
-  };
-  return { busy, start };
+const PICK_KEY = "vm_resume_pick";
+
+// A centred dialog over a dimmed page. Escape or a click outside closes it, the
+// page behind stops scrolling, and focus goes back to what opened it.
+const Modal = ({ titleId, onClose, wide = false, children }) => {
+  // the caller's onClose is a new function every render; the effect must not re-run (and move focus) for that
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    const opener = document.activeElement;
+    const escape = (e) => e.key === "Escape" && closeRef.current();
+    const scroll = document.body.style.overflow;
+    document.addEventListener("keydown", escape);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", escape);
+      document.body.style.overflow = scroll;
+      opener?.focus?.();
+    };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-3 sm:px-5" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`w-full ${wide ? "max-w-3xl" : "max-w-md"} max-h-[92vh] overflow-y-auto rounded-2xl border border-frame_border bg-frame_bg p-5 sm:p-7 flex flex-col gap-4`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body
+  );
 };
 
-// THIS portfolio's resume. The signed-in owner downloads it (PDF or Word); a
+const GROUPS = [
+  { key: "ats", title: "ATS-safe", hint: "Plain text in one column - what job portals and recruiter software read best. PDF or Word." },
+  { key: "graphic", title: "Graphic", hint: "Designed pages with your photo, for people rather than software. PDF only." },
+];
+
+const DesignCard = ({ design, slug, selected, onSelect }) => {
+  const [broken, setBroken] = useState(false);
+  return (
+    <label
+      className={`flex flex-col gap-2 rounded-xl border p-2 cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-text_color ${
+        selected ? "border-text_color bg-text_color/10" : "border-frame_border hover:border-text_color/40"
+      }`}
+    >
+      <input type="radio" name="resume-design" value={design.key} checked={selected} onChange={() => onSelect(design.key)} className="sr-only" />
+      <span className="block aspect-[1/1.414] w-full overflow-hidden rounded-md bg-white">
+        {!broken && (
+          <img
+            src={resumeThumbUrl(slug, design.key)}
+            alt=""
+            loading="lazy"
+            draggable={false}
+            onError={() => setBroken(true)}
+            className="block h-full w-full object-cover object-top"
+          />
+        )}
+      </span>
+      <span className={`text-sm font-semibold ${selected ? "text-text_color" : "text-fg"}`}>{design.label}</span>
+      <span className="text-xs leading-snug text-fg/60">{design.blurb}</span>
+    </label>
+  );
+};
+
+const readPick = () => {
+  const raw = attempt(() => JSON.parse(localStorage.getItem(PICK_KEY) || "null"));
+  return raw && typeof raw === "object" ? raw : {};
+};
+
+// Owner: choose a design and a format, then download. With `tracks` (landing page)
+// the portfolio is chosen here too; otherwise `slug` is the one being viewed.
+const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
+  const { authFetch } = useAuth();
+  const { showToast } = useToast();
+  const [slug, setSlug] = useState(fixedSlug || tracks?.[0]?.slug);
+  const [designs, setDesigns] = useState(null);
+  const [failed, setFailed] = useState("");
+  const [template, setTemplate] = useState("");
+  const [kind, setKind] = useState("pdf");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchResumeTemplates()
+      .then((list) => {
+        if (cancelled) return;
+        const saved = readPick();
+        const start = list.find((d) => d.key === saved.template) || list.find((d) => d.default) || list[0];
+        setDesigns(list);
+        setTemplate(start.key);
+        setKind(saved.kind === "docx" && start.formats.includes("docx") ? "docx" : "pdf");
+      })
+      .catch((err) => !cancelled && setFailed(err.message));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const current = designs?.find((d) => d.key === template);
+  const canWord = !!current?.formats.includes("docx");
+
+  const choose = (key) => {
+    setTemplate(key);
+    // Word cannot hold the drawn layouts - fall back to PDF rather than leave an impossible choice
+    if (!designs.find((d) => d.key === key).formats.includes(kind)) setKind("pdf");
+  };
+
+  const download = () => {
+    setBusy(true);
+    downloadResume(authFetch, slug, kind, template)
+      .then((name) => {
+        attempt(() => localStorage.setItem(PICK_KEY, JSON.stringify({ template, kind })));
+        showToast(`Downloaded ${name}`, "success");
+        onClose();
+      })
+      .catch((err) => {
+        showToast(err.message);
+        setBusy(false);
+      });
+  };
+
+  return (
+    <Modal titleId="resume-download-title" onClose={onClose} wide>
+      <div>
+        <h2 id="resume-download-title" className="text-text_color text-lg font-semibold">
+          Download resume
+        </h2>
+        <p className="text-fg/60 text-sm mt-1">Pick the design that fits where it is going. Everything comes from the portfolio page itself.</p>
+      </div>
+
+      {tracks?.length > 1 && (
+        <label className="flex flex-col gap-1 text-sm text-fg/80">
+          Portfolio
+          <select
+            value={slug}
+            onChange={(e) => setSlug(e.target.value)}
+            className="rounded-lg border border-fg/25 bg-body_bg px-3 py-2.5 text-fg outline-none focus:border-text_color"
+          >
+            {tracks.map((track) => (
+              <option key={track.id} value={track.slug}>
+                {track.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {failed && <p className="text-red-500 text-sm">{failed}</p>}
+      {!designs && !failed && <p className="text-fg/60 text-sm">Loading designs...</p>}
+
+      {designs &&
+        GROUPS.map((group) => (
+          <fieldset key={group.key} className="min-w-0">
+            <legend className="text-fg font-semibold">{group.title}</legend>
+            <p className="text-fg/60 text-xs mt-0.5 mb-2.5">{group.hint}</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+              {designs
+                .filter((d) => d.group === group.key)
+                .map((design) => (
+                  <DesignCard key={`${slug}:${design.key}`} design={design} slug={slug} selected={design.key === template} onSelect={choose} />
+                ))}
+            </div>
+          </fieldset>
+        ))}
+
+      <div className="sticky bottom-0 -mx-5 sm:-mx-7 -mb-5 sm:-mb-7 flex flex-wrap items-center justify-between gap-3 border-t border-frame_border bg-frame_bg px-5 sm:px-7 py-4">
+        <div role="radiogroup" aria-label="File type" className="flex items-center gap-1 rounded-full border border-frame_border p-1">
+          {[
+            ["pdf", "PDF"],
+            ["docx", "Word"],
+          ].map(([key, label]) => {
+            const off = key === "docx" && !canWord;
+            return (
+              <button
+                key={key}
+                type="button"
+                role="radio"
+                aria-checked={kind === key}
+                disabled={off || !designs}
+                title={off ? "Graphic designs are PDF only" : undefined}
+                onClick={() => setKind(key)}
+                className={`rounded-full px-4 py-1.5 min-h-12 md:min-h-0 text-sm font-semibold transition-colors disabled:opacity-40 ${
+                  kind === key ? "bg-text_color text-body_bg" : "text-fg hover:text-text_color"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="flex gap-2.5">
+          <button type="button" className="btn-ghost" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" disabled={busy || !current} onClick={download} className={PILL_PRIMARY}>
+            <FiDownload aria-hidden="true" /> {busy ? "Preparing..." : `Download ${kind === "pdf" ? "PDF" : "Word"}`}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+// THIS portfolio's resume. The signed-in owner picks a design and downloads it; a
 // visitor gets a link to the read-only copy, opened in a new tab. It appears in
 // the nav bar ("nav", both audiences) and, for visitors only, again in the
 // Resume section ("body") in case the first one is missed - the owner's
@@ -38,21 +231,6 @@ const useDownload = (slug, onDone) => {
 export const ResumeButton = ({ slug, variant = "body" }) => {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
-  const box = useRef(null);
-  const { busy, start } = useDownload(slug, () => setOpen(false));
-
-  useEffect(() => {
-    if (!open) return undefined;
-    const outside = (e) => !box.current?.contains(e.target) && setOpen(false);
-    const escape = (e) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", outside);
-    document.addEventListener("keydown", escape);
-    return () => {
-      document.removeEventListener("mousedown", outside);
-      document.removeEventListener("keydown", escape);
-    };
-  }, [open]);
-
   const nav = variant === "nav";
   if (!nav && isAuthenticated) return null;
   if (!isAuthenticated) {
@@ -62,120 +240,60 @@ export const ResumeButton = ({ slug, variant = "body" }) => {
       </a>
     );
   }
-
   return (
-    <div ref={box} className="relative inline-block">
-      <button
-        type="button"
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        aria-label={nav ? "Download resume" : undefined}
-        className={nav ? NAV_PILL : PILL_PRIMARY}
-      >
+    <>
+      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} aria-label="Download resume" className={NAV_PILL}>
         {/* in the nav bar a "Resume" label would sit right beside the Resume section link */}
-        <FiDownload aria-hidden="true" /> {nav ? "Download" : "Download resume"}
+        <FiDownload aria-hidden="true" /> Download
       </button>
-      {open && (
-        <div
-          role="menu"
-          className={`absolute z-[60] mt-2 w-52 rounded-2xl border border-frame_border bg-frame_bg p-1.5 shadow-lg ${
-            nav ? "right-0" : "left-1/2 -translate-x-1/2"
-          }`}
-        >
-          {[
-            ["pdf", "PDF (.pdf)"],
-            ["docx", "Word (.docx)"],
-          ].map(([kind, label]) => (
-            <button
-              key={kind}
-              type="button"
-              role="menuitem"
-              disabled={!!busy}
-              onClick={() => start(kind)}
-              className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-fg hover:bg-text_color/10 disabled:opacity-50"
-            >
-              <FiFileText aria-hidden="true" /> {busy === kind ? "Preparing..." : label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+      {open && <DownloadDialog slug={slug} onClose={() => setOpen(false)} />}
+    </>
   );
 };
 
-// On the landing page: which portfolio's resume? Then the owner picks a format
-// and downloads it; a visitor opens the read-only copy.
+// Visitor, on the landing page: which portfolio's resume? Then open the read-only copy.
 const Picker = ({ tracks, onClose }) => {
-  const { isAuthenticated } = useAuth();
   const [slug, setSlug] = useState(tracks[0]?.slug);
-  const { busy, start } = useDownload(slug, onClose);
-
-  useEffect(() => {
-    const escape = (e) => e.key === "Escape" && onClose();
-    document.addEventListener("keydown", escape);
-    return () => document.removeEventListener("keydown", escape);
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-5" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="resume-picker-title"
-        className="w-full max-w-md rounded-2xl border border-frame_border bg-frame_bg p-6 sm:p-7 flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div>
-          <h2 id="resume-picker-title" className="text-text_color text-lg font-semibold">
-            Which resume?
-          </h2>
-          <p className="text-fg/60 text-sm mt-1">Each portfolio has its own resume, built from what is on its page.</p>
-        </div>
-
-        <div role="radiogroup" aria-labelledby="resume-picker-title" className="flex flex-col gap-2">
-          {tracks.map((track) => {
-            const on = track.slug === slug;
-            return (
-              <button
-                key={track.id}
-                type="button"
-                role="radio"
-                aria-checked={on}
-                autoFocus={on}
-                onClick={() => setSlug(track.slug)}
-                className={`flex flex-col items-start rounded-2xl border px-4 py-3 text-left transition-colors ${
-                  on ? "border-text_color bg-text_color/10" : "border-frame_border hover:border-text_color/40"
-                }`}
-              >
-                <span className={`font-semibold ${on ? "text-text_color" : "text-fg"}`}>{track.name}</span>
-                {track.about?.skill && <span className="text-xs text-fg/60">{track.about.skill}</span>}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-2.5 pt-1">
-          <button type="button" className="btn-ghost" onClick={onClose}>
-            Cancel
-          </button>
-          {isAuthenticated ? (
-            <>
-              <button type="button" disabled={!!busy} onClick={() => start("docx")} className={PILL_OUTLINE}>
-                <FiFileText aria-hidden="true" /> {busy === "docx" ? "Preparing..." : "Word"}
-              </button>
-              <button type="button" disabled={!!busy} onClick={() => start("pdf")} className={PILL_PRIMARY}>
-                <FiDownload aria-hidden="true" /> {busy === "pdf" ? "Preparing..." : "PDF"}
-              </button>
-            </>
-          ) : (
-            <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" onClick={onClose} className={PILL_PRIMARY}>
-              <FiEye aria-hidden="true" /> Open resume
-            </a>
-          )}
-        </div>
+    <Modal titleId="resume-picker-title" onClose={onClose}>
+      <div>
+        <h2 id="resume-picker-title" className="text-text_color text-lg font-semibold">
+          Which resume?
+        </h2>
+        <p className="text-fg/60 text-sm mt-1">Each portfolio has its own resume, built from what is on its page.</p>
       </div>
-    </div>
+
+      <div role="radiogroup" aria-labelledby="resume-picker-title" className="flex flex-col gap-2">
+        {tracks.map((track) => {
+          const on = track.slug === slug;
+          return (
+            <button
+              key={track.id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              autoFocus={on}
+              onClick={() => setSlug(track.slug)}
+              className={`flex flex-col items-start rounded-2xl border px-4 py-3 text-left transition-colors ${
+                on ? "border-text_color bg-text_color/10" : "border-frame_border hover:border-text_color/40"
+              }`}
+            >
+              <span className={`font-semibold ${on ? "text-text_color" : "text-fg"}`}>{track.name}</span>
+              {track.about?.skill && <span className="text-xs text-fg/60">{track.about.skill}</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-wrap justify-end gap-2.5 pt-1">
+        <button type="button" className="btn-ghost" onClick={onClose}>
+          Cancel
+        </button>
+        <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" onClick={onClose} className={PILL_PRIMARY}>
+          <FiEye aria-hidden="true" /> Open resume
+        </a>
+      </div>
+    </Modal>
   );
 };
 
@@ -194,6 +312,7 @@ export const ResumeLauncher = ({ tracks, variant = "body" }) => {
         <button
           type="button"
           onClick={() => setOpen(true)}
+          aria-haspopup="dialog"
           aria-label={word}
           className={`${NAV_PILL} size-12 justify-center px-0 py-0 sm:size-auto sm:px-3 sm:py-1.5`}
         >
@@ -201,20 +320,24 @@ export const ResumeLauncher = ({ tracks, variant = "body" }) => {
           <span className="hidden sm:inline">{word}</span>
         </button>
       ) : (
-        <button type="button" onClick={() => setOpen(true)} className={`${PILL_OUTLINE} mt-3`}>
+        <button type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" className={`${PILL_OUTLINE} mt-3`}>
           <FiEye aria-hidden="true" /> View resume
         </button>
       )}
-      {open && <Picker tracks={tracks} onClose={() => setOpen(false)} />}
+      {open && (isAuthenticated ? <DownloadDialog tracks={tracks} onClose={() => setOpen(false)} /> : <Picker tracks={tracks} onClose={() => setOpen(false)} />)}
     </>
   );
 };
 
-// Phone menu: the owner's two downloads for the portfolio being viewed, or a
+// Phone menu: the owner's download dialog for the portfolio being viewed, or a
 // visitor's link to the read-only copy.
 export const ResumeMenuItems = ({ slug, onDone }) => {
   const { isAuthenticated } = useAuth();
-  const { busy, start } = useDownload(slug, onDone);
+  const [open, setOpen] = useState(false);
+  const close = () => {
+    setOpen(false);
+    onDone?.();
+  };
   if (!isAuthenticated) {
     return (
       <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" onClick={onDone} className={`${NAV_PILL} min-h-12`}>
@@ -223,15 +346,11 @@ export const ResumeMenuItems = ({ slug, onDone }) => {
     );
   }
   return (
-    <div className="flex flex-wrap gap-2 pt-1">
-      {[
-        ["pdf", "PDF"],
-        ["docx", "Word"],
-      ].map(([kind, label]) => (
-        <button key={kind} type="button" disabled={!!busy} onClick={() => start(kind)} className={`${NAV_PILL} min-h-12 disabled:opacity-50`}>
-          <FiFileText aria-hidden="true" /> {busy === kind ? "Preparing..." : `Download ${label}`}
-        </button>
-      ))}
-    </div>
+    <>
+      <button type="button" aria-haspopup="dialog" onClick={() => setOpen(true)} className={`${NAV_PILL} min-h-12`}>
+        <FiFileText aria-hidden="true" /> Download resume
+      </button>
+      {open && <DownloadDialog slug={slug} onClose={close} />}
+    </>
   );
 };
