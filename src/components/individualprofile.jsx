@@ -9,6 +9,7 @@ import { useToast } from "./toastContext";
 import Notyetloader from "./notyetloaded";
 import VisitorsSection from "./visitorsSection";
 import { ResumeLauncher } from "./resumeActions";
+import { ProjectCopyChoice } from "./projectSharing";
 import GoalsSection from "./goalsSection";
 import ThemeToggle from "./themeToggle";
 import Logo from "./logo";
@@ -35,6 +36,7 @@ const OwnerRoot = () => {
   const [showNewTrackForm, setShowNewTrackForm] = useState(false);
   const [newTrackName, setNewTrackName] = useState("");
   const [copyFrom, setCopyFrom] = useState("");
+  const [projectMode, setProjectMode] = useState("copy");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
   const [editingTrackId, setEditingTrackId] = useState(null);
@@ -117,7 +119,8 @@ const OwnerRoot = () => {
         username: owner_username,
         name: newTrackName.trim(),
         copy_from: copyFrom || null,
-        copy_portfolio_items: true,
+        copy_portfolio_items: projectMode === "copy",
+        share_portfolio_items: projectMode === "share",
       }),
     })
       .then((res) => {
@@ -127,6 +130,7 @@ const OwnerRoot = () => {
       .then(() => {
         setNewTrackName("");
         setCopyFrom("");
+        setProjectMode("copy");
         setShowNewTrackForm(false);
         fetchProfile();
       })
@@ -529,6 +533,8 @@ const OwnerRoot = () => {
                 ))}
               </select>
             )}
+
+            {copyFrom && <ProjectCopyChoice value={projectMode} onChange={setProjectMode} className="rounded px-3 py-2" />}
 
             {formError && (
               <p className="text-red-500 text-sm">{formError}</p>

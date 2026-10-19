@@ -3,6 +3,7 @@ import { HiTrash } from "react-icons/hi";
 import { api_base_url, owner_username } from "./globalvalues";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
+import { ProjectCopyChoice } from "./projectSharing";
 
 const ENTRY_TYPE_FIELDS = {
   education: [
@@ -142,6 +143,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
   const [newTrackMode, setNewTrackMode] = useState(false);
   const [newTrackName, setNewTrackName] = useState("");
   const [copyFrom, setCopyFrom] = useState("");
+  const [projectMode, setProjectMode] = useState("copy");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -170,7 +172,8 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
       body.new_track = {
         name: newTrackName,
         copy_from: copyFrom || null,
-        copy_portfolio_items: true,
+        copy_portfolio_items: projectMode === "copy",
+        share_portfolio_items: projectMode === "share",
       };
     }
 
@@ -270,6 +273,7 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
                   </option>
                 ))}
               </select>
+              {copyFrom && <ProjectCopyChoice value={projectMode} onChange={setProjectMode} className="rounded px-2 py-1" />}
             </div>
           ) : (
             <div className="flex flex-col gap-2">

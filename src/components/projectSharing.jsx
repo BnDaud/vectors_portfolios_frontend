@@ -52,4 +52,22 @@ const ShareChoices = ({ legend, hint, tracks, value, onChange, mark, name }) => 
   );
 };
 
+// When a new portfolio starts from another one: what happens to that one's projects.
+// "copy" gives the new portfolio its own copies; "share" shows the very same projects
+// in both (edit once, both change); "none" leaves them behind.
+export const ProjectCopyChoice = ({ value, onChange, className = "" }) => (
+  <label className="flex flex-col gap-1 text-sm text-fg/80">
+    Its projects
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={`bg-body_bg text-fg outline-none ${className}`}
+    >
+      <option value="copy">Make separate copies (changes stay in each)</option>
+      <option value="share">Share the same projects (edit once, both change)</option>
+      <option value="none">Do not bring the projects over</option>
+    </select>
+  </label>
+);
+
 export default ShareChoices;
