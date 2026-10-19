@@ -196,7 +196,7 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
         <p className="text-fg/60 text-sm mt-1">
           {previewing
             ? "This is exactly what you will get."
-            : "Pick the design that fits where it is going. Everything comes from the portfolio page itself."}
+            : "Pick the design that fits where it is going. Everything comes from the portfolio page; the five most recent projects are included."}
         </p>
       </div>
 
