@@ -85,4 +85,6 @@ export const PORTFOLIO_FIELDS = [
   { name: "name", label: "Name", type: "text", required: true, maxLength: 50 },
   { name: "thumbnail", label: "Thumbnail URL", type: "text", required: true, ...URL_RULES },
   { name: "project_link", label: "Project link", type: "text", required: true, ...URL_RULES },
+  // Optional one-liner for the resume's project cards; the cap matches the backend (PROJECT_DESCRIPTION_MAX).
+  { name: "description", label: "Short description (optional, shown on the resume)", type: "textarea", fullWidth: true, maxLength: 160 },
 ];
