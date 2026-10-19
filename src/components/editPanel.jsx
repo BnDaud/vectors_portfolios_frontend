@@ -152,7 +152,7 @@ const ProfileAboutForm = ({ track, about, onSaved }) => {
   );
 };
 
-const EditPanel = ({ track, onSaved }) => {
+const EditPanel = ({ track, tracks = [], onSaved }) => {
   const about = track.about;
 
   return (
@@ -196,6 +196,7 @@ const EditPanel = ({ track, onSaved }) => {
         endpoint={`${api_base_url}/portfolio/`}
         parentField="track"
         parentId={track.id}
+        sharing={{ tracks: tracks.map(({ id, name }) => ({ id, name })) }}
         onChange={onSaved}
       />
     </div>

@@ -3,6 +3,7 @@ import { HiTrash } from "react-icons/hi";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
 import FieldHint from "./fieldHint";
+import ShareChoices from "./projectSharing";
 import { validateField, validateAll, describeFailure, inputClass } from "./validation";
 
 // A select shows its first option while its state is "", so default to that
@@ -90,9 +91,20 @@ const FieldInput = ({ field, value, onChange, onBlur, showError = true }) => {
  * Generic add/edit/delete list editor for track sub-resources that all
  * share the same shape (a flat set of fields hanging off a parent id) -
  * Resume, School, Proficiency, Portfolio items.
+ *
+ * `sharing` ({tracks: [{id, name}], currentId}) is for portfolio projects, which
+ * several portfolios can show: a new one can be shared when it is added, an
+ * existing one gets a "shown in" checklist, and deleting asks where else to
+ * delete it. Unticking a project everywhere deletes it.
  */
-const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parentId, onChange }) => {
+const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parentId, onChange, sharing }) => {
   const { authFetch } = useAuth();
+  // what the owner types to confirm a delete: the entry's name where it has one (projects), else its first field
+  const labelField = fields.find((f) => f.name === "name") ?? fields[0];
+  const canShare = sharing?.tracks?.length > 1;
+  const nameOf = (id) => sharing?.tracks.find((t) => t.id === id)?.name ?? "";
+  const [newShare, setNewShare] = useState([]);
+  const [alsoDelete, setAlsoDelete] = useState([]);
   const { showToast } = useToast();
   const [rows, setRows] = useState(entries);
   const [newEntry, setNewEntry] = useState(blankEntry(fields));
@@ -110,16 +122,29 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, [field]: value } : r)));
   };
 
+  const savedShownIn = (id) => entries.find((e) => e.id === id)?.tracks ?? [];
+
   const saveRow = (row) => {
     if (Object.keys(validateAll(fields, row)).length) return;
+    if (canShare && Array.isArray(row.tracks) && row.tracks.length === 0) {
+      // ticked nowhere: that means delete, so ask like any other delete
+      setDeleteTarget({ ...row, unticked: true });
+      setDeleteConfirmText("");
+      return;
+    }
     setBusy(true);
+    const body = Object.fromEntries(fields.map((f) => [f.name, row[f.name]]));
+    if (canShare && Array.isArray(row.tracks)) body.tracks = row.tracks;
     authFetch(`${endpoint}${row.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.fromEntries(fields.map((f) => [f.name, row[f.name]]))),
+      body: JSON.stringify(body),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(await describeFailure("Save failed", res));
+        if (canShare && Array.isArray(row.tracks) && row.tracks.join() !== savedShownIn(row.id).join()) {
+          showToast(`Saved. Shown in: ${row.tracks.map(nameOf).join(", ")}.`, "success");
+        }
         onChange();
       })
       .catch((err) => showToast(err.message))
@@ -136,10 +161,12 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
     authFetch(endpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [parentField]: parentId, ...newEntry }),
+      body: JSON.stringify({ [parentField]: parentId, ...newEntry, ...(canShare && newShare.length ? { share_with: newShare } : {}) }),
     })
       .then(async (res) => {
         if (!res.ok) throw new Error(await describeFailure("Create failed", res));
+        if (canShare && newShare.length) showToast(`Added to this portfolio and ${newShare.map(nameOf).join(", ")}.`, "success");
+        setNewShare([]);
         setNewEntry(blankEntry(fields));
         setTouched({});
         setAttempted(false);
@@ -150,15 +177,20 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
   };
 
   const confirmDelete = () => {
-    const label = deleteTarget[fields[0].name];
+    const label = deleteTarget[labelField.name];
     if (deleteConfirmText !== String(label)) return;
 
     setBusy(true);
-    authFetch(`${endpoint}${deleteTarget.id}`, { method: "DELETE" })
+    // a shared project is taken out of this portfolio only, plus any others ticked; the rest keep it
+    const shownIn = canShare ? savedShownIn(deleteTarget.id) : [];
+    const others = deleteTarget.unticked ? shownIn.filter((id) => id !== parentId) : alsoDelete;
+    const query = canShare && shownIn.length ? `?from=${parentId}${others.length ? `&also=${others.join(",")}` : ""}` : "";
+    authFetch(`${endpoint}${deleteTarget.id}${query}`, { method: "DELETE" })
       .then((res) => {
         if (!res.ok) throw new Error("Delete failed");
         setDeleteTarget(null);
         setDeleteConfirmText("");
+        setAlsoDelete([]);
         onChange();
       })
       .catch((err) => showToast(err.message))
@@ -193,12 +225,24 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
               onClick={() => {
                 setDeleteTarget(row);
                 setDeleteConfirmText("");
+                setAlsoDelete([]);
               }}
               className="text-fg/60 hover:text-red-500 mt-2"
               aria-label={`Delete ${title} entry`}
             >
               <HiTrash />
             </button>
+            {canShare && Array.isArray(row.tracks) && (
+              <ShareChoices
+                name={`shown-${row.id}`}
+                legend="Shown in"
+                hint="Tick the portfolios that show this project, then Save. Unticking one leaves the others as they are; unticking all deletes the project."
+                tracks={sharing.tracks}
+                value={row.tracks}
+                onChange={(ids) => updateRow(row.id, "tracks", ids)}
+                mark={(t) => (t.id === parentId ? "(this one)" : "")}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -224,17 +268,45 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
         >
           + Add
         </button>
+        {canShare && (
+          <ShareChoices
+            name="share-new"
+            legend="Also show it in (optional)"
+            hint={`It is always added to this portfolio. Leave these empty to keep it only here; you can add it to others later.`}
+            tracks={sharing.tracks.filter((t) => t.id !== parentId)}
+            value={newShare}
+            onChange={setNewShare}
+          />
+        )}
       </form>
 
       {deleteTarget && (
         <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center px-5">
           <div className="bg-frame_bg rounded-xl p-6 max-w-md w-full flex flex-col gap-4 border border-fg/10">
             <h3 className="text-text_color text-lg font-semibold">
-              Delete "{deleteTarget[fields[0].name]}"
+              Delete "{deleteTarget[labelField.name]}"
             </h3>
+            {canShare && deleteTarget.unticked ? (
+              <p className="text-fg text-sm">
+                You unticked every portfolio, so nothing shows this project any more and it will be deleted for good.
+              </p>
+            ) : canShare && savedShownIn(deleteTarget.id).length > 1 ? (
+              <>
+                <p className="text-fg text-sm">
+                  This project is also shown in other portfolios. It is deleted from this one only, unless you tick more:
+                </p>
+                <ShareChoices
+                  name="also-delete"
+                  legend="Also delete it from"
+                  tracks={sharing.tracks.filter((t) => t.id !== parentId && savedShownIn(deleteTarget.id).includes(t.id))}
+                  value={alsoDelete}
+                  onChange={setAlsoDelete}
+                />
+              </>
+            ) : null}
             <p className="text-fg text-sm">
               This cannot be undone. Type{" "}
-              <span className="font-semibold">{deleteTarget[fields[0].name]}</span> to confirm.
+              <span className="font-semibold">{deleteTarget[labelField.name]}</span> to confirm.
             </p>
             <input
               type="text"
@@ -250,17 +322,24 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
                 onClick={() => {
                   setDeleteTarget(null);
                   setDeleteConfirmText("");
+                  setAlsoDelete([]);
                 }}
               >
                 Cancel
               </button>
               <button
                 type="button"
-                disabled={deleteConfirmText !== String(deleteTarget[fields[0].name]) || busy}
+                disabled={deleteConfirmText !== String(deleteTarget[labelField.name]) || busy}
                 onClick={confirmDelete}
                 className="bg-red-600 text-fg font-semibold px-4 py-2 rounded disabled:opacity-50"
               >
-                Delete
+                {canShare && !deleteTarget.unticked && savedShownIn(deleteTarget.id).length > 1
+                  ? alsoDelete.length === 0
+                    ? "Delete from this portfolio"
+                    : alsoDelete.length === savedShownIn(deleteTarget.id).length - 1
+                      ? "Delete everywhere"
+                      : `Delete from ${alsoDelete.length + 1} portfolios`
+                  : "Delete"}
               </button>
             </div>
           </div>

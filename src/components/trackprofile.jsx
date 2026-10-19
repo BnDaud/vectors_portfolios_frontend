@@ -83,7 +83,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
       )}
 
       {editMode ? (
-        <EditPanel track={track} onSaved={fetchProfile} />
+        <EditPanel track={track} tracks={profile.tracks} onSaved={fetchProfile} />
       ) : (
         <>
           <div ref={refs?.home} className="scroll-mt-20">
