@@ -252,7 +252,8 @@ const OwnerRoot = () => {
     <div className="pt-20">
       <nav className="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-5 sm:px-10 backdrop-blur-md bg-frame_bg/60 h-16 shadow-md">
         <Logo />
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-6">
+          <ResumeLauncher tracks={tracks} variant="nav" />
           <ThemeToggle />
           {isAuthenticated ? (
             <button

@@ -8,6 +8,9 @@ const PILL =
   "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 min-h-12 md:min-h-0 text-sm font-semibold transition-colors";
 const PILL_PRIMARY = `${PILL} bg-text_color text-body_bg hover:brightness-110`;
 const PILL_OUTLINE = `${PILL} border border-text_color/50 text-text_color hover:bg-text_color/10`;
+// the nav bar's version: same height as the login / logout button next to it
+const NAV_PILL =
+  "inline-flex items-center gap-1.5 rounded-full border border-text_color/50 px-3 py-1.5 text-sm font-semibold text-text_color transition-colors hover:bg-text_color/10";
 
 // Owner: one tap per format. Pass an optional onDone to react after a download.
 const useDownload = (slug, onDone) => {
@@ -27,9 +30,12 @@ const useDownload = (slug, onDone) => {
   return { busy, start };
 };
 
-// On a portfolio: the owner downloads THIS portfolio's resume (PDF or Word);
-// a visitor opens a read-only copy in a new tab.
-export const ResumeButton = ({ slug }) => {
+// THIS portfolio's resume. The signed-in owner downloads it (PDF or Word); a
+// visitor gets a link to the read-only copy, opened in a new tab. It appears in
+// the nav bar ("nav", both audiences) and, for visitors only, again in the
+// Resume section ("body") in case the first one is missed - the owner's
+// downloads live in the nav bar alone.
+export const ResumeButton = ({ slug, variant = "body" }) => {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const box = useRef(null);
@@ -47,9 +53,11 @@ export const ResumeButton = ({ slug }) => {
     };
   }, [open]);
 
+  const nav = variant === "nav";
+  if (!nav && isAuthenticated) return null;
   if (!isAuthenticated) {
     return (
-      <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" className={PILL_PRIMARY}>
+      <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" className={nav ? NAV_PILL : PILL_PRIMARY}>
         <FiEye aria-hidden="true" /> View resume
       </a>
     );
@@ -57,13 +65,23 @@ export const ResumeButton = ({ slug }) => {
 
   return (
     <div ref={box} className="relative inline-block">
-      <button type="button" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((v) => !v)} className={PILL_PRIMARY}>
-        <FiDownload aria-hidden="true" /> Download resume
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        aria-label={nav ? "Download resume" : undefined}
+        className={nav ? NAV_PILL : PILL_PRIMARY}
+      >
+        {/* in the nav bar a "Resume" label would sit right beside the Resume section link */}
+        <FiDownload aria-hidden="true" /> {nav ? "Download" : "Download resume"}
       </button>
       {open && (
         <div
           role="menu"
-          className="absolute left-1/2 z-30 mt-2 w-52 -translate-x-1/2 rounded-2xl border border-frame_border bg-frame_bg p-1.5 shadow-lg"
+          className={`absolute z-[60] mt-2 w-52 rounded-2xl border border-frame_border bg-frame_bg p-1.5 shadow-lg ${
+            nav ? "right-0" : "left-1/2 -translate-x-1/2"
+          }`}
         >
           {[
             ["pdf", "PDF (.pdf)"],
@@ -161,17 +179,59 @@ const Picker = ({ tracks, onClose }) => {
   );
 };
 
-export const ResumeLauncher = ({ tracks }) => {
+// Landing page: "which resume?". In the nav bar ("nav") for everyone - the owner
+// downloads, a visitor views - and, for visitors only, once more in the page ("body").
+export const ResumeLauncher = ({ tracks, variant = "body" }) => {
   const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
-  if (!tracks.length) return null;
+  const nav = variant === "nav";
+  if (!tracks.length || (!nav && isAuthenticated)) return null;
+  const word = isAuthenticated ? "Download resume" : "View resume";
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={`${PILL_OUTLINE} mt-3`}>
-        {isAuthenticated ? <FiDownload aria-hidden="true" /> : <FiEye aria-hidden="true" />}
-        {isAuthenticated ? "Download resume" : "View resume"}
-      </button>
+      {nav ? (
+        // icon-only (a proper tap target) on a phone, with the words from tablet width up
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={word}
+          className={`${NAV_PILL} size-12 justify-center px-0 py-0 sm:size-auto sm:px-3 sm:py-1.5`}
+        >
+          {isAuthenticated ? <FiDownload aria-hidden="true" /> : <FiEye aria-hidden="true" />}{" "}
+          <span className="hidden sm:inline">{word}</span>
+        </button>
+      ) : (
+        <button type="button" onClick={() => setOpen(true)} className={`${PILL_OUTLINE} mt-3`}>
+          <FiEye aria-hidden="true" /> View resume
+        </button>
+      )}
       {open && <Picker tracks={tracks} onClose={() => setOpen(false)} />}
     </>
+  );
+};
+
+// Phone menu: the owner's two downloads for the portfolio being viewed, or a
+// visitor's link to the read-only copy.
+export const ResumeMenuItems = ({ slug, onDone }) => {
+  const { isAuthenticated } = useAuth();
+  const { busy, start } = useDownload(slug, onDone);
+  if (!isAuthenticated) {
+    return (
+      <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" onClick={onDone} className={`${NAV_PILL} min-h-12`}>
+        <FiEye aria-hidden="true" /> View resume
+      </a>
+    );
+  }
+  return (
+    <div className="flex flex-wrap gap-2 pt-1">
+      {[
+        ["pdf", "PDF"],
+        ["docx", "Word"],
+      ].map(([kind, label]) => (
+        <button key={kind} type="button" disabled={!!busy} onClick={() => start(kind)} className={`${NAV_PILL} min-h-12 disabled:opacity-50`}>
+          <FiFileText aria-hidden="true" /> {busy === kind ? "Preparing..." : `Download ${label}`}
+        </button>
+      ))}
+    </div>
   );
 };
