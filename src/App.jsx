@@ -9,6 +9,7 @@ import { AuthProvider } from "./components/authContext";
 import { ToastProvider } from "./components/toastContext";
 import { ThemeProvider } from "./components/themeContext";
 import VisitTracker from "./components/visitTracker";
+import ResumeViewer from "./components/resumeViewer";
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
                 <Route path="/" element={<OwnerRoot />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/addprofile" element={<AddProfile />} />
+                <Route path="/resume/:trackSlug" element={<ResumeViewer />} />
                 <Route path="/:trackSlug" element={<Template />} />
                 <Route path="*" element={<NotFound404 />} />
               </Routes>

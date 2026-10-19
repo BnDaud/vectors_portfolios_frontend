@@ -24,6 +24,7 @@ export const PROFILE_FIELDS = [
   { name: "twitter", label: "Twitter", ...URL_RULES },
   { name: "email", label: "Email", maxLength: 50 },
   { name: "phone_number", label: "Phone number", maxLength: 50 },
+  { name: "location", label: "Location (city, country) - shown on the resume", maxLength: 80 },
 ];
 
 export const ABOUT_FIELDS = [
@@ -59,6 +60,7 @@ export const RESUME_FIELDS = [
 
 export const SCHOOL_FIELDS = [
   { name: "school_name", label: "School", type: "text", required: true, maxLength: 50 },
+  { name: "degree", label: "Degree / field of study (optional)", type: "text", maxLength: 100 },
   { name: "start_year", label: "Start", type: "date", required: true },
   { name: "end_year", label: "End", type: "date", required: true },
   { name: "certificate_link", label: "Certificate link (optional)", type: "text", ...URL_RULES },

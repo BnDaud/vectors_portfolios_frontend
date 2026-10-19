@@ -3,10 +3,9 @@ import { FaBriefcase, FaCode } from "react-icons/fa";
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Wheel from "../resumeWheel";
+import { ResumeButton } from "../resumeActions";
 
 const yearOf = (date) => date.split("-")[0];
-const dateRange = (start, end) =>
-  `${yearOf(start)} - ${yearOf(end) >= new Date().getFullYear() ? "Till Date" : yearOf(end)}`;
 
 // A skill's 0-100 rating is the owner's own; this puts it into words so the
 // number says something about the skill. Bands: 80+ Expert, 60+ Advanced,
@@ -44,6 +43,11 @@ const timeline = (start, end) => {
   const duration = spanOf(monthsBetween(parseDay(start), ongoing ? now : parseDay(end)));
   return { ongoing, duration };
 };
+
+// "2020 - 2024", or "2024 - Till Date" while the end date is still ahead - the
+// exact same test as the Current / In progress pills, so the two always agree.
+const dateRange = (start, end) =>
+  `${yearOf(start)} - ${parseDay(end) > new Date() ? "Till Date" : yearOf(end)}`;
 
 const CertificateThumb = ({ link }) =>
   link ? (
@@ -103,7 +107,7 @@ const Board = ({ entry }) => (
     {entry.level != null && (
       <div>
         <div className="flex justify-between text-sm text-fg/70 mb-1">
-          <span>Proficiency (self-rated)</span>
+          <span>Confidence level</span>
           <span>{entry.level}%</span>
         </div>
         <div className="relative w-full h-2 bg-fg/15 rounded-full overflow-hidden">
@@ -126,6 +130,7 @@ const Board = ({ entry }) => (
 
 const Resume = ({
   trackName,
+  trackSlug,
   about: { resume, school, proficiency, years_of_experience },
 }) => {
   const [tab, setTab] = useState("experience");
@@ -164,9 +169,9 @@ const Resume = ({
         return {
           key: `s${s.id}`,
           label: s.school_name,
-          sub: `${dateRange(s.start_year, s.end_year)} · ${ongoing ? "In progress" : duration}`,
+          sub: s.degree || `${dateRange(s.start_year, s.end_year)} · ${ongoing ? "In progress" : duration}`,
           title: s.school_name,
-          subtitle: "",
+          subtitle: s.degree,
           meta: dateRange(s.start_year, s.end_year),
           chips: ongoing
             ? [{ text: "In progress", accent: true }, { text: `${duration} so far` }]
@@ -231,6 +236,9 @@ const Resume = ({
     >
       <h2 className="text-text_color text-center text-2xl font-semibold">My Resume</h2>
       <p className="text-fg text-xl sm:text-2xl font-bold text-center mt-4">{headline}</p>
+      <div className="mt-4 flex justify-center">
+        <ResumeButton slug={trackSlug} />
+      </div>
 
       <div className="mt-8 mx-auto max-w-5xl grid gap-5 md:grid-cols-5 md:items-stretch">
         {/* Picker (2/5): what to look at, with the wheel directly beneath */}

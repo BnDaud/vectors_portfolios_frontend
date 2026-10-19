@@ -8,6 +8,7 @@ import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
 import Notyetloader from "./notyetloaded";
 import VisitorsSection from "./visitorsSection";
+import { ResumeLauncher } from "./resumeActions";
 import GoalsSection from "./goalsSection";
 import ThemeToggle from "./themeToggle";
 import Logo from "./logo";
@@ -333,6 +334,7 @@ const OwnerRoot = () => {
             {profile.user.first_name} {profile.user.last_name}
           </h1>
           <p className="text-fg mt-2">Choose a portfolio to view</p>
+          <ResumeLauncher tracks={tracks} />
           {isAuthenticated && !editingPassword && (
             <button
               type="button"

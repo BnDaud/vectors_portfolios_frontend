@@ -46,7 +46,7 @@ const VisitTracker = () => {
       return;
     }
     if (attempt(() => localStorage.getItem(OWNER_KEY)) === "1") return;
-    if (navigator.doNotTrack === "1" || SKIP_PATHS.includes(pathname)) return;
+    if (navigator.doNotTrack === "1" || SKIP_PATHS.includes(pathname) || pathname.startsWith("/resume/")) return;
 
     const visitorId = getVisitorId();
     if (!visitorId) return;

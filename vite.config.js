@@ -45,7 +45,7 @@ const seoPlugin = (env) => {
         `\n</urlset>\n`;
 
       const robots =
-        `User-agent: *\nAllow: /\nDisallow: /login\nDisallow: /addprofile\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
+        `User-agent: *\nAllow: /\nDisallow: /login\nDisallow: /addprofile\nDisallow: /resume/\n\nSitemap: ${siteUrl}/sitemap.xml\n`;
 
       this.emitFile({ type: "asset", fileName: "sitemap.xml", source: sitemap });
       this.emitFile({ type: "asset", fileName: "robots.txt", source: robots });
