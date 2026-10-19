@@ -101,7 +101,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
             <Resume username={username} trackName={track.name} trackSlug={track.slug} about={track.about} />
           </div>
           <div ref={refs?.portfolio} className="scroll-mt-20">
-            <Portfolio username={username} portfolio={track.items} />
+            <Portfolio username={username} portfolio={track.items} tracks={profile.tracks} currentId={track.id} />
           </div>
           <div ref={refs?.contact} className="scroll-mt-20">
             <Contact username={username} contact={{ ...profile, ...track }} />

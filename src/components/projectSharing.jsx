@@ -1,3 +1,16 @@
+import { FiShare2 } from "react-icons/fi";
+
+// A small "Shared" tag for the owner: only ever put on a project that more than one
+// portfolio shows (an unshared one carries nothing). `others` are the other portfolios' names.
+export const SharedBadge = ({ others, className = "" }) => (
+  <span
+    title={`Also shown in: ${others.join(", ")}`}
+    className={`inline-flex items-center gap-1 rounded-full bg-text_color px-2 py-0.5 text-[11px] font-semibold leading-none text-body_bg ${className}`}
+  >
+    <FiShare2 aria-hidden="true" /> Shared
+  </span>
+);
+
 // Which portfolios show a project: a checklist of the owner's portfolios with an
 // "All portfolios" box on top, so a long list is one tick. `tracks` is
 // [{id, name}] and `value` the ticked ids; `mark` can add a note beside a name.

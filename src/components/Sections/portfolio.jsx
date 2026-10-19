@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "../authContext";
+import { SharedBadge } from "../projectSharing";
 
-const Portfolio = ({ username, portfolio }) => {
+// `tracks` and `currentId` let the owner see which projects other portfolios share too.
+const Portfolio = ({ username, portfolio, tracks = [], currentId }) => {
+  const { isAuthenticated } = useAuth();
   const [display, setDisplay] = useState("All");
 
   const categories = useMemo(
@@ -71,6 +75,12 @@ const Portfolio = ({ username, portfolio }) => {
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+            {isAuthenticated && p.tracks?.length > 1 && (
+              <SharedBadge
+                className="absolute left-3 top-3 shadow"
+                others={p.tracks.filter((id) => id !== currentId).map((id) => tracks.find((t) => t.id === id)?.name).filter(Boolean)}
+              />
+            )}
             <div className="absolute left-4 bottom-4 right-4 text-white">
               <div className="text-xs uppercase tracking-wide text-text_color">
                 {p.category}

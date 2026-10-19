@@ -3,7 +3,7 @@ import { HiTrash } from "react-icons/hi";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
 import FieldHint from "./fieldHint";
-import ShareChoices from "./projectSharing";
+import ShareChoices, { SharedBadge } from "./projectSharing";
 import { validateField, validateAll, describeFailure, inputClass } from "./validation";
 
 // A select shows its first option while its state is "", so default to that
@@ -204,6 +204,12 @@ const EntryListEditor = ({ title, entries, fields, endpoint, parentField, parent
       <div className="flex flex-col gap-3">
         {rows.map((row) => (
           <div key={row.id} className="flex flex-wrap gap-2 items-start bg-body_bg/40 rounded p-2">
+            {canShare && savedShownIn(row.id).length > 1 && (
+              <div className="order-first flex w-full basis-full flex-wrap items-center gap-2 text-xs text-fg/70">
+                <SharedBadge others={savedShownIn(row.id).filter((id) => id !== parentId).map(nameOf)} />
+                also shown in {savedShownIn(row.id).filter((id) => id !== parentId).map(nameOf).join(", ")}
+              </div>
+            )}
             {fields.map((field) => (
               <FieldInput
                 key={field.name}
