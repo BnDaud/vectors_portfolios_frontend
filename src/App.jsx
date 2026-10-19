@@ -10,6 +10,7 @@ import { ToastProvider } from "./components/toastContext";
 import { ThemeProvider } from "./components/themeContext";
 import VisitTracker from "./components/visitTracker";
 import ResumeViewer from "./components/resumeViewer";
+import { LogoWatermark } from "./components/logo";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <VisitTracker />
+            <LogoWatermark />
             <div className="bg-body_bg min-h-screen">
               <Routes>
                 <Route path="/" element={<OwnerRoot />} />
