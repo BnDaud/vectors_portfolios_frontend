@@ -6,6 +6,7 @@ import { all_profiles_url, api_base_url, site_url } from "./globalvalues";
 import { accountHome, usePageOwner } from "./pageOwner";
 import NotFound404 from "./notfound";
 import SignInOptions from "./signInOptions";
+import AccountsSection from "./accountsSection";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
@@ -645,6 +646,9 @@ const OwnerRoot = () => {
 
         {/* Owner-only: who has visited, never including the owner's own visits */}
         {canEdit && <VisitorsSection />}
+
+        {/* site owner only: the accounts people have made */}
+        {canEdit && owner.isSiteOwner && <AccountsSection />}
       </div>
     </div>
   );
