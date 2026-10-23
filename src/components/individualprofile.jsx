@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { HiPencil, HiTrash } from "react-icons/hi";
 import { FiLogIn, FiLogOut, FiKey } from "react-icons/fi";
-import { all_profiles_url, api_base_url, owner_username, site_url } from "./globalvalues";
+import { all_profiles_url, api_base_url, site_url } from "./globalvalues";
+import { accountHome, usePageOwner } from "./pageOwner";
+import NotFound404 from "./notfound";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
@@ -55,11 +57,19 @@ const OwnerRoot = () => {
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
   const { isAuthenticated, username, authFetch, logout, changePassword } = useAuth();
+  // whose front page this is; only its own signed-in owner gets the editing controls
+  const owner = usePageOwner();
+  const canEdit = owner.canEdit;
+  const owner_username = owner.username;
+  const [missing, setMissing] = useState(false);
 
   const fetchProfile = () => {
-    fetch(`${all_profiles_url}?username=${owner_username}`)
+    fetch(`${all_profiles_url}?username=${encodeURIComponent(owner_username)}`)
       .then((res) => res.json())
-      .then((data) => setProfile(data[0]))
+      .then((data) => {
+        setProfile(data[0] || null);
+        setMissing(!data[0]);
+      })
       .catch((err) => console.error("Error fetching profile:", err));
   };
 
@@ -73,7 +83,8 @@ const OwnerRoot = () => {
   useEffect(() => {
     fetchProfile();
     fetchGoals();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [owner_username]);
 
   const ownerName = profile
     ? `${profile.user.first_name} ${profile.user.last_name}`.trim() || profile.user.username
@@ -88,12 +99,12 @@ const OwnerRoot = () => {
     enabled: !!profile,
     title: `${ownerName} – Portfolio | ${SITE_NAME}`,
     description: landingDescription,
-    path: "/",
+    path: owner.home,
     jsonLd:
       profile &&
       personSchema({
         name: ownerName,
-        url: `${site_url}/`,
+        url: `${site_url}${owner.home}`,
         jobTitle: seoTracks[0]?.about?.skill,
         description: landingDescription,
         image: profile.display_pic,
@@ -101,9 +112,12 @@ const OwnerRoot = () => {
       }),
   });
 
+  if (missing) return <NotFound404 />;
   if (!profile) return <Notyetloader />;
 
   const tracks = profile.tracks || [];
+  // the site owner has no limit; a signed-up account has one portfolio
+  const atLimit = profile.max_portfolios != null && tracks.length >= profile.max_portfolios;
 
   const handleCreateTrack = (e) => {
     e.preventDefault();
@@ -259,6 +273,16 @@ const OwnerRoot = () => {
         <div className="flex items-center gap-3 sm:gap-6">
           <ResumeLauncher tracks={tracks} variant="nav" />
           <ThemeToggle />
+          {isAuthenticated && !canEdit && (
+            <Link to={accountHome(username)} className="hidden sm:inline-flex text-sm text-text_color font-semibold hover:underline">
+              My page
+            </Link>
+          )}
+          {!isAuthenticated && (
+            <Link to="/signup" className="hidden sm:inline-flex text-sm text-text_color font-semibold hover:underline">
+              Sign up
+            </Link>
+          )}
           {isAuthenticated ? (
             <button
               type="button"
@@ -286,7 +310,7 @@ const OwnerRoot = () => {
               className="h-32 w-32"
               priority
             />
-            {isAuthenticated && !editingLanding && (
+            {canEdit && !editingLanding && (
               <button
                 type="button"
                 onClick={startLandingEdit}
@@ -298,7 +322,7 @@ const OwnerRoot = () => {
             )}
           </div>
 
-          {isAuthenticated && editingLanding && (
+          {canEdit && editingLanding && (
             <form
               onSubmit={saveLandingImage}
               noValidate
@@ -340,7 +364,7 @@ const OwnerRoot = () => {
           </h1>
           <p className="text-fg mt-2">Choose a portfolio to view</p>
           <ResumeLauncher tracks={tracks} />
-          {isAuthenticated && !editingPassword && (
+          {canEdit && !editingPassword && (
             <button
               type="button"
               onClick={openPasswordForm}
@@ -351,7 +375,7 @@ const OwnerRoot = () => {
             </button>
           )}
 
-          {isAuthenticated && editingPassword && (
+          {canEdit && editingPassword && (
             <form
               onSubmit={savePassword}
               noValidate
@@ -419,9 +443,9 @@ const OwnerRoot = () => {
               data-track-slug={track.slug}
               role="link"
               tabIndex={0}
-              onClick={() => navigate(`/${track.slug}`)}
+              onClick={() => navigate(owner.path(track.slug))}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && e.target === e.currentTarget) navigate(`/${track.slug}`);
+                if (e.key === "Enter" && e.target === e.currentTarget) navigate(owner.path(track.slug));
               }}
               className="group relative w-full sm:w-[24rem] cursor-pointer bg-frame_bg border border-frame_border rounded-xl shadow-lg px-6 py-8 sm:py-5 flex flex-col items-center gap-4 text-center sm:flex-row sm:gap-x-6 sm:text-left outline-none transition-all hover:-translate-y-1 hover:border-text_color/40 hover:shadow-[0_0_24px_-4px_var(--color-text_color)] focus-visible:ring-2 focus-visible:ring-text_color"
             >
@@ -432,7 +456,7 @@ const OwnerRoot = () => {
                 decorative
               />
 
-              {isAuthenticated && (
+              {canEdit && (
                 <div className="absolute top-2 right-2 flex gap-2">
                   <button
                     type="button"
@@ -455,7 +479,7 @@ const OwnerRoot = () => {
                 </div>
               )}
 
-              <div className={`min-w-0 flex-1 space-y-2 ${isAuthenticated ? "sm:pr-6" : ""}`}>
+              <div className={`min-w-0 flex-1 space-y-2 ${canEdit ? "sm:pr-6" : ""}`}>
                 <div className="space-y-0.5">
                   {editingTrackId === track.id ? (
                     <input
@@ -485,7 +509,12 @@ const OwnerRoot = () => {
             </div>
           ))}
 
-          {isAuthenticated && (
+          {canEdit && atLimit && (
+            <p className="w-full text-center text-fg/60 text-sm">
+              Your account can have {profile.max_portfolios} portfolio{profile.max_portfolios === 1 ? "" : "s"}. Delete it to start a different one.
+            </p>
+          )}
+          {canEdit && !atLimit && (
             <div
               role="button"
               tabIndex={0}
@@ -501,7 +530,7 @@ const OwnerRoot = () => {
           )}
         </div>
 
-        {isAuthenticated && showNewTrackForm && (
+        {canEdit && showNewTrackForm && (
           <form
             onSubmit={handleCreateTrack}
             className="bg-frame_bg rounded-xl p-6 max-w-md mx-auto mt-8 flex flex-col gap-4"
@@ -601,7 +630,7 @@ const OwnerRoot = () => {
           </div>
         )}
 
-        {isAuthenticated && (
+        {canEdit && (
           <GoalsSection
             goals={goals}
             tracks={tracks}
@@ -613,7 +642,7 @@ const OwnerRoot = () => {
         )}
 
         {/* Owner-only: who has visited, never including the owner's own visits */}
-        {isAuthenticated && <VisitorsSection />}
+        {canEdit && <VisitorsSection />}
       </div>
     </div>
   );

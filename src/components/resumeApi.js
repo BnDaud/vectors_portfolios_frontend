@@ -1,23 +1,21 @@
 import { api_base_url } from "./globalvalues";
 
-// Where the read-only copy of a portfolio's resume lives (opened in a new tab).
-export const resumeViewPath = (slug) => `/resume/${slug}`;
-
-export const resumePageUrl = (slug, page, version, template) => {
-  const query = [template && `template=${template}`, version && `v=${version}`].filter(Boolean).join("&");
+// `account` is the "u=<username>" query for another account's portfolio ("" for the site owner's).
+export const resumePageUrl = (slug, page, version, template, account = "") => {
+  const query = [template && `template=${template}`, version && `v=${version}`, account].filter(Boolean).join("&");
   return `${api_base_url}/resume-export/${slug}/pages/${page}.png${query ? `?${query}` : ""}`;
 };
 
 // How many pages a design has for this portfolio: {pages, version, template, ...}.
-export const fetchResumePages = async (slug, template) => {
-  const res = await fetch(`${api_base_url}/resume-export/${slug}/pages?template=${encodeURIComponent(template)}`);
+export const fetchResumePages = async (slug, template, account = "") => {
+  const res = await fetch(`${api_base_url}/resume-export/${slug}/pages?template=${encodeURIComponent(template)}${account ? `&${account}` : ""}`);
   if (!res.ok) throw new Error(res.status === 429 ? "Too many previews just now - try again in a few minutes." : `Could not load the preview (${res.status}).`);
   return res.json();
 };
 
 // A small picture of a design's first page, for the owner's design picker.
-export const resumeThumbUrl = (slug, template) =>
-  `${api_base_url}/resume-export/${slug}/pages/1.png?template=${template}&thumb=1`;
+export const resumeThumbUrl = (slug, template, account = "") =>
+  `${api_base_url}/resume-export/${slug}/pages/1.png?template=${template}&thumb=1${account ? `&${account}` : ""}`;
 
 // The designs on offer: [{key, group: "ats" | "graphic", label, blurb, formats, default}].
 export const fetchResumeTemplates = async () => {
@@ -28,8 +26,8 @@ export const fetchResumeTemplates = async () => {
 
 // Owner only: fetches the resume file with the sign-in cookie and saves it,
 // under the name the server chose (e.g. Sulaimon_Lawal_Full_Stack_Resume_Bold.pdf).
-export const downloadResume = async (authFetch, slug, kind, template) => {
-  const query = template ? `?template=${encodeURIComponent(template)}` : "";
+export const downloadResume = async (authFetch, slug, kind, template, account = "") => {
+  const query = `?${[template && `template=${encodeURIComponent(template)}`, account].filter(Boolean).join("&")}`;
   const res = await authFetch(`${api_base_url}/resume-export/${slug}/download/${kind}${query}`);
   if (!res.ok) {
     throw new Error(res.status === 401 || res.status === 403 ? "Sign in again to download the resume." : `Download failed (${res.status}).`);

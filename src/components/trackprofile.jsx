@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { all_profiles_url, site_url } from "./globalvalues";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
-import { useAuth } from "./authContext";
+import { usePageOwner } from "./pageOwner";
 import Home from "./Sections/home";
 import Portfolio from "./Sections/portfolio";
 import Contact from "./Sections/contact";
@@ -15,7 +15,8 @@ import Logo from "./logo";
 const TrackProfile = ({ username, trackSlug, refs }) => {
   const [profile, setProfile] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const { isAuthenticated } = useAuth();
+  // only this portfolio's own signed-in owner may edit it
+  const { canEdit, path } = usePageOwner();
 
   const fetchProfile = () => {
     const url = `${all_profiles_url}?username=${username}`;
@@ -23,7 +24,7 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
     return fetch(url)
       .then((res) => res.json())
       .then((data) => {
-        setProfile(data[0]);
+        setProfile(data[0] || false);   // false: no such account
       })
       .catch((err) => console.error("Error fetching profile:", err));
   };
@@ -50,12 +51,12 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
     enabled: !!track,
     title: `${track?.name} Portfolio – ${fullName} | ${SITE_NAME}`,
     description: pageDescription,
-    path: `/${trackSlug}`,
+    path: path(trackSlug),
     jsonLd:
       track &&
       personSchema({
         name: fullName,
-        url: `${site_url}/${trackSlug}`,
+        url: `${site_url}${path(trackSlug)}`,
         jobTitle: track.about?.skill,
         description: pageDescription,
         image: track.display_pic || profile.display_pic,
@@ -64,13 +65,14 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
       }),
   });
 
+  if (profile === false) return <NotFound404 />;
   if (!profile) return <Notyetloader />;
 
   if (!track) return <NotFound404 />;
 
   return (
     <>
-      {isAuthenticated && (
+      {canEdit && (
         <div className="flex justify-center mt-5">
           <button
             type="button"

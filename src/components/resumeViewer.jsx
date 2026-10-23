@@ -3,6 +3,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "./authContext";
 import { api_base_url } from "./globalvalues";
 import { fetchResumeTemplates, resumePageUrl } from "./resumeApi";
+import { usePageOwner } from "./pageOwner";
 import { getVisitorId, isOwnerBrowser } from "./visitorId";
 import { useSeo, SITE_NAME } from "./seo";
 import NotFound404 from "./notfound";
@@ -24,14 +25,15 @@ const ResumeViewer = () => {
   const { trackSlug } = useParams();
   const [params, setParams] = useSearchParams();
   const template = params.get("template") || ""; // empty = the site's default design
-  const { ready, isAuthenticated } = useAuth();
+  const { ready } = useAuth();
+  const { canEdit: isAuthenticated, apiQuery, username: owner, resumePath } = usePageOwner();   // the resume's own owner is never counted
   const [info, setInfo] = useState(null);
   const [designs, setDesigns] = useState([]);
   const [switching, setSwitching] = useState(false);
   const [state, setState] = useState("loading"); // loading | ok | missing | busy | failed
   const counted = useRef(false);
 
-  useSeo({ title: `Resume | ${SITE_NAME}`, description: "Read-only resume.", path: `/resume/${trackSlug}`, noindex: true });
+  useSeo({ title: `Resume | ${SITE_NAME}`, description: "Read-only resume.", path: resumePath(trackSlug), noindex: true });
 
   // the designs on offer, for the switcher (without it the page still works with the default design)
   useEffect(() => {
@@ -43,7 +45,8 @@ const ResumeViewer = () => {
     // a first load shows the loader; switching design keeps the current pages in view until the new ones are ready
     if (info) setSwitching(true);
     else setState("loading");
-    fetch(`${api_base_url}/resume-export/${trackSlug}/pages${template ? `?template=${encodeURIComponent(template)}` : ""}`)
+    const query = [template && `template=${encodeURIComponent(template)}`, apiQuery].filter(Boolean).join("&");
+    fetch(`${api_base_url}/resume-export/${trackSlug}/pages${query ? `?${query}` : ""}`)
       .then(async (res) => {
         if (cancelled) return;
         if (res.status === 404) return setState("missing");
@@ -72,11 +75,11 @@ const ResumeViewer = () => {
     fetch(`${api_base_url}/analytics/resume-view`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ visitor_id: visitorId, slug: trackSlug }),
+      body: JSON.stringify({ visitor_id: visitorId, slug: trackSlug, username: owner }),
       keepalive: true,
       credentials: "include", // lets the server recognise (and skip) a signed-in owner
     }).catch(() => {});
-  }, [loaded, ready, isAuthenticated, trackSlug]);
+  }, [loaded, ready, isAuthenticated, trackSlug, owner]);
 
   useEffect(() => {
     const stop = (e) => e.preventDefault();
@@ -148,7 +151,7 @@ const ResumeViewer = () => {
                 {Array.from({ length: info.pages }, (_, i) => i + 1).map((page) => (
                   <div key={page} className="relative overflow-hidden rounded-lg bg-white shadow-lg">
                     <img
-                      src={resumePageUrl(trackSlug, page, info.version, info.template)}
+                      src={resumePageUrl(trackSlug, page, info.version, info.template, apiQuery)}
                       alt={`Resume page ${page} of ${info.pages}`}
                       draggable={false}
                       className="block w-full h-auto"

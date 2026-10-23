@@ -1,5 +1,5 @@
 import "./App.css";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import Template from "./components/template";
 import OwnerRoot from "./components/individualprofile";
 import NotFound404 from "./components/notfound";
@@ -11,6 +11,14 @@ import { ThemeProvider } from "./components/themeContext";
 import VisitTracker from "./components/visitTracker";
 import ResumeViewer from "./components/resumeViewer";
 import { LogoWatermark } from "./components/logo";
+import Signup from "./components/signup";
+import { PageOwnerProvider } from "./components/pageOwner";
+
+// /u/<username>/... are another account's pages; everything else is the site owner's
+const Account = ({ children }) => {
+  const { username } = useParams();
+  return <PageOwnerProvider username={username}>{children}</PageOwnerProvider>;
+};
 
 function App() {
   return (
@@ -24,6 +32,10 @@ function App() {
               <Routes>
                 <Route path="/" element={<OwnerRoot />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/u/:username" element={<Account><OwnerRoot /></Account>} />
+                <Route path="/u/:username/resume/:trackSlug" element={<Account><ResumeViewer /></Account>} />
+                <Route path="/u/:username/:trackSlug" element={<Account><Template /></Account>} />
                 <Route path="/addprofile" element={<AddProfile />} />
                 <Route path="/resume/:trackSlug" element={<ResumeViewer />} />
                 <Route path="/:trackSlug" element={<Template />} />

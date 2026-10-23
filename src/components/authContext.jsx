@@ -55,6 +55,32 @@ export const AuthProvider = ({ children }) => {
       })
     );
 
+  // Account creation and "Continue with Google" end exactly like a login: the server sets the cookies.
+  // A failed sign-up throws an Error carrying the server's per-field messages in `fieldErrors`.
+  const postAndSignIn = (path, body) =>
+    primeCsrf().then(() =>
+      fetch(`${api_base_url}${path}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken.current },
+        body: JSON.stringify(body),
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const error = new Error(
+            res.status === 429 ? "Too many attempts - please wait a while and try again." : data.detail || "That did not work - please check the form."
+          );
+          error.fieldErrors = data;
+          throw error;
+        }
+        setIsAuthenticated(true);
+        setUsername(data.username);
+        return data;
+      })
+    );
+  const signup = (fields) => postAndSignIn("/auth/signup", fields);
+  const googleSignIn = (credential) => postAndSignIn("/auth/google", { credential });
+
   const logout = () =>
     authFetch(`${api_base_url}/auth/logout`, { method: "POST" }).finally(() => {
       setIsAuthenticated(false);
@@ -121,7 +147,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, username, ready, login, logout, authFetch, changePassword }}
+      value={{ isAuthenticated, username, ready, login, signup, googleSignIn, logout, authFetch, changePassword }}
     >
       {children}
     </AuthContext.Provider>

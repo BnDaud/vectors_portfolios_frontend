@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { HiTrash } from "react-icons/hi";
-import { api_base_url, owner_username } from "./globalvalues";
+import { api_base_url } from "./globalvalues";
+import { usePageOwner } from "./pageOwner";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
 import { ProjectCopyChoice } from "./projectSharing";
@@ -41,6 +42,7 @@ const defaultEntryData = (entryType, goal) => {
 
 const NewGoalForm = ({ onCreated }) => {
   const { authFetch } = useAuth();
+  const { username: owner } = usePageOwner();
   const { showToast } = useToast();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -55,7 +57,7 @@ const NewGoalForm = ({ onCreated }) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        username: owner_username,
+        username: owner,
         title,
         description,
         target_date: targetDate || null,
@@ -327,7 +329,8 @@ const CompleteGoalModal = ({ goal, tracks, onClose, onCompleted }) => {
 };
 
 const GoalsSection = ({ goals, tracks, onChange }) => {
-  const { isAuthenticated, authFetch } = useAuth();
+  const { authFetch } = useAuth();
+  const { canEdit: isAuthenticated } = usePageOwner();   // the owner of this page only
   const { showToast } = useToast();
   const [completingGoal, setCompletingGoal] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);

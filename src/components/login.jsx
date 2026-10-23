@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import GoogleButton from "./googleButton";
+import { accountHome } from "./pageOwner";
 import { useAuth } from "./authContext";
 import { useSeo, SITE_NAME } from "./seo";
 
@@ -10,7 +12,7 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  useSeo({ title: `Sign in | ${SITE_NAME}`, description: "Owner sign-in.", path: "/login", noindex: true });
+  useSeo({ title: `Sign in | ${SITE_NAME}`, description: "Sign in to edit your portfolio.", path: "/login", noindex: true });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -18,7 +20,7 @@ const Login = () => {
     setError("");
 
     login(username, password)
-      .then(() => navigate("/"))
+      .then((data) => navigate(accountHome(data.username)))
       .catch((err) => setError(err.message))
       .finally(() => setSubmitting(false));
   };
@@ -59,6 +61,17 @@ const Login = () => {
         >
           {submitting ? "Logging in..." : "Login"}
         </button>
+
+        <div className="flex items-center gap-3 text-fg/50 text-xs">
+          <span className="h-px flex-1 bg-fg/15" /> or <span className="h-px flex-1 bg-fg/15" />
+        </div>
+        <GoogleButton text="signin_with" />
+        <p className="text-fg/70 text-sm text-center">
+          New here?{" "}
+          <Link to="/signup" className="text-text_color font-semibold hover:underline">
+            Create your free portfolio
+          </Link>
+        </p>
       </form>
     </div>
   );

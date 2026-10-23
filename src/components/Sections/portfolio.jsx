@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { useAuth } from "../authContext";
+import { usePageOwner } from "../pageOwner";
 import { SharedBadge } from "../projectSharing";
 
 // `tracks` and `currentId` let the owner see which projects other portfolios share too.
 const Portfolio = ({ username, portfolio, tracks = [], currentId }) => {
-  const { isAuthenticated } = useAuth();
+  const { canEdit: isAuthenticated } = usePageOwner();   // the owner of this page only
   const [display, setDisplay] = useState("All");
 
   const categories = useMemo(

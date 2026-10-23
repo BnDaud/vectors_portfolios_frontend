@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { FiDownload, FiEye, FiFileText } from "react-icons/fi";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
-import { downloadResume, fetchResumePages, fetchResumeTemplates, resumePageUrl, resumeThumbUrl, resumeViewPath } from "./resumeApi";
+import { downloadResume, fetchResumePages, fetchResumeTemplates, resumePageUrl, resumeThumbUrl } from "./resumeApi";
+import { usePageOwner } from "./pageOwner";
 import { attempt } from "./visitorId";
 
 const PILL =
@@ -59,6 +60,7 @@ const GROUPS = [
 
 const DesignCard = ({ design, slug, selected, onSelect }) => {
   const [broken, setBroken] = useState(false);
+  const { apiQuery } = usePageOwner();
   return (
     <label
       className={`flex flex-col gap-2 rounded-xl border p-2 cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-text_color ${
@@ -69,7 +71,7 @@ const DesignCard = ({ design, slug, selected, onSelect }) => {
       <span className="block aspect-[1/1.414] w-full overflow-hidden rounded-md bg-white">
         {!broken && (
           <img
-            src={resumeThumbUrl(slug, design.key)}
+            src={resumeThumbUrl(slug, design.key, apiQuery)}
             alt=""
             loading="lazy"
             draggable={false}
@@ -87,6 +89,7 @@ const DesignCard = ({ design, slug, selected, onSelect }) => {
 // The chosen design, page by page and full size, so it can be looked over before it is downloaded.
 // It is always the PDF layout; the Word file carries the same content in the same order.
 const PreviewPane = ({ slug, design, kind }) => {
+  const { apiQuery } = usePageOwner();
   const [info, setInfo] = useState(null);
   const [error, setError] = useState("");
 
@@ -94,13 +97,13 @@ const PreviewPane = ({ slug, design, kind }) => {
     let cancelled = false;
     setInfo(null);
     setError("");
-    fetchResumePages(slug, design.key)
+    fetchResumePages(slug, design.key, apiQuery)
       .then((result) => !cancelled && setInfo(result))
       .catch((err) => !cancelled && setError(err.message));
     return () => {
       cancelled = true;
     };
-  }, [slug, design.key]);
+  }, [slug, design.key, apiQuery]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -113,7 +116,7 @@ const PreviewPane = ({ slug, design, kind }) => {
         Array.from({ length: info.pages }, (_, i) => i + 1).map((page) => (
           <img
             key={page}
-            src={resumePageUrl(slug, page, info.version, design.key)}
+            src={resumePageUrl(slug, page, info.version, design.key, apiQuery)}
             alt={`${design.label} design, page ${page} of ${info.pages}`}
             draggable={false}
             className="block w-full h-auto rounded-lg bg-white shadow-lg"
@@ -131,6 +134,7 @@ const readPick = () => {
 // Owner: choose a design and a format, then download. With `tracks` (landing page)
 // the portfolio is chosen here too; otherwise `slug` is the one being viewed.
 const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
+  const { apiQuery } = usePageOwner();
   const { authFetch } = useAuth();
   const { showToast } = useToast();
   const [slug, setSlug] = useState(fixedSlug || tracks?.[0]?.slug);
@@ -174,7 +178,7 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
 
   const download = () => {
     setBusy(true);
-    downloadResume(authFetch, slug, kind, template)
+    downloadResume(authFetch, slug, kind, template, apiQuery)
       .then((name) => {
         attempt(() => localStorage.setItem(PICK_KEY, JSON.stringify({ template, kind })));
         showToast(`Downloaded ${name}`, "success");
@@ -293,13 +297,13 @@ const DownloadDialog = ({ slug: fixedSlug, tracks, onClose }) => {
 // Resume section ("body") in case the first one is missed - the owner's
 // downloads live in the nav bar alone.
 export const ResumeButton = ({ slug, variant = "body" }) => {
-  const { isAuthenticated } = useAuth();
+  const { canEdit: isAuthenticated, resumePath } = usePageOwner();   // the owner of this page, not any signed-in account
   const [open, setOpen] = useState(false);
   const nav = variant === "nav";
   if (!nav && isAuthenticated) return null;
   if (!isAuthenticated) {
     return (
-      <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" className={nav ? NAV_PILL : PILL_PRIMARY}>
+      <a href={resumePath(slug)} target="_blank" rel="noopener noreferrer" className={nav ? NAV_PILL : PILL_PRIMARY}>
         <FiEye aria-hidden="true" /> View resume
       </a>
     );
@@ -318,6 +322,7 @@ export const ResumeButton = ({ slug, variant = "body" }) => {
 // Visitor, on the landing page: which portfolio's resume? Then open the read-only copy.
 const Picker = ({ tracks, onClose }) => {
   const [slug, setSlug] = useState(tracks[0]?.slug);
+  const { resumePath } = usePageOwner();
   return (
     <Modal titleId="resume-picker-title" onClose={onClose}>
       <div>
@@ -353,7 +358,7 @@ const Picker = ({ tracks, onClose }) => {
         <button type="button" className="btn-ghost" onClick={onClose}>
           Cancel
         </button>
-        <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" onClick={onClose} className={PILL_PRIMARY}>
+        <a href={resumePath(slug)} target="_blank" rel="noopener noreferrer" onClick={onClose} className={PILL_PRIMARY}>
           <FiEye aria-hidden="true" /> Open resume
         </a>
       </div>
@@ -364,7 +369,7 @@ const Picker = ({ tracks, onClose }) => {
 // Landing page: "which resume?". In the nav bar ("nav") for everyone - the owner
 // downloads, a visitor views - and, for visitors only, once more in the page ("body").
 export const ResumeLauncher = ({ tracks, variant = "body" }) => {
-  const { isAuthenticated } = useAuth();
+  const { canEdit: isAuthenticated } = usePageOwner();   // the owner of this page, not any signed-in account
   const [open, setOpen] = useState(false);
   const nav = variant === "nav";
   if (!tracks.length || (!nav && isAuthenticated)) return null;
@@ -396,7 +401,7 @@ export const ResumeLauncher = ({ tracks, variant = "body" }) => {
 // Phone menu: the owner's download dialog for the portfolio being viewed, or a
 // visitor's link to the read-only copy.
 export const ResumeMenuItems = ({ slug, onDone }) => {
-  const { isAuthenticated } = useAuth();
+  const { canEdit: isAuthenticated, resumePath } = usePageOwner();   // the owner of this page, not any signed-in account
   const [open, setOpen] = useState(false);
   const close = () => {
     setOpen(false);
@@ -404,7 +409,7 @@ export const ResumeMenuItems = ({ slug, onDone }) => {
   };
   if (!isAuthenticated) {
     return (
-      <a href={resumeViewPath(slug)} target="_blank" rel="noopener noreferrer" onClick={onDone} className={`${NAV_PILL} min-h-12`}>
+      <a href={resumePath(slug)} target="_blank" rel="noopener noreferrer" onClick={onDone} className={`${NAV_PILL} min-h-12`}>
         <FiEye aria-hidden="true" /> View resume
       </a>
     );

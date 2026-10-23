@@ -3,7 +3,7 @@ import { HiMenu, HiX } from "react-icons/hi"; // for hamburger icons
 import { FiLogIn, FiLogOut } from "react-icons/fi";
 import { useParams, Link } from "react-router-dom";
 import TrackProfile from "./trackprofile";
-import { owner_username } from "./globalvalues";
+import { usePageOwner } from "./pageOwner";
 import { useAuth } from "./authContext";
 import ThemeToggle from "./themeToggle";
 import Logo from "./logo";
@@ -16,6 +16,7 @@ const label = (section) => section.charAt(0).toUpperCase() + section.slice(1);
 const Template = () => {
   const { trackSlug } = useParams();
   const { isAuthenticated, username, logout } = useAuth();
+  const owner = usePageOwner();
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
@@ -193,7 +194,7 @@ const Template = () => {
       {/* Page Content */}
       <div>
         <TrackProfile
-          username={owner_username}
+          username={owner.username}
           trackSlug={trackSlug}
           refs={sectionsref}
         />
