@@ -5,6 +5,7 @@ import { FiLogIn, FiLogOut, FiKey } from "react-icons/fi";
 import { all_profiles_url, api_base_url, site_url } from "./globalvalues";
 import { accountHome, usePageOwner } from "./pageOwner";
 import NotFound404 from "./notfound";
+import SignInOptions from "./signInOptions";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { useAuth } from "./authContext";
 import { useToast } from "./toastContext";
@@ -56,7 +57,7 @@ const OwnerRoot = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated, username, authFetch, logout, changePassword } = useAuth();
+  const { isAuthenticated, username, authFetch, logout, changePassword, signIn } = useAuth();
   // whose front page this is; only its own signed-in owner gets the editing controls
   const owner = usePageOwner();
   const canEdit = owner.canEdit;
@@ -364,7 +365,8 @@ const OwnerRoot = () => {
           </h1>
           <p className="text-fg mt-2">Choose a portfolio to view</p>
           <ResumeLauncher tracks={tracks} />
-          {canEdit && !editingPassword && (
+          {canEdit && <SignInOptions />}
+          {canEdit && signIn.password && !editingPassword && (
             <button
               type="button"
               onClick={openPasswordForm}

@@ -22,7 +22,8 @@ const loadGoogle = () =>
 
 // Google's own "Continue with Google" button. Google hands back a signed token, the
 // server checks it and signs the person in - a first visit creates their account.
-const GoogleButton = ({ text = "continue_with" }) => {
+// `onCredential` replaces signing in - used to connect Google to the account already signed in.
+const GoogleButton = ({ text = "continue_with", onCredential }) => {
   const box = useRef(null);
   const { googleSignIn } = useAuth();
   const { theme } = useTheme();
@@ -31,8 +32,8 @@ const GoogleButton = ({ text = "continue_with" }) => {
   // the auth helpers are new functions every render; the button must not be re-made for that
   const onToken = useRef(null);
   onToken.current = (credential) =>
-    googleSignIn(credential)
-      .then((data) => navigate(accountHome(data.username)))
+    (onCredential ? onCredential(credential).then(() => setError("")) : googleSignIn(credential))
+      .then((data) => !onCredential && navigate(accountHome(data.username)))
       .catch((err) => setError(err.message));
 
   useEffect(() => {

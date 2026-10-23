@@ -9,6 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState(null);
   const [ready, setReady] = useState(false);
+  // which ways the signed-in account can sign in: {password: bool, google: bool}
+  const [signIn, setSignIn] = useState({ password: false, google: false });
   const csrfToken = useRef(null);
 
   const primeCsrf = () =>
@@ -24,6 +26,7 @@ export const AuthProvider = ({ children }) => {
       .then((data) => {
         setIsAuthenticated(!!data.authenticated);
         setUsername(data.username || null);
+        setSignIn({ password: !!data.has_password, google: !!data.google });
       });
 
   useEffect(() => {
@@ -75,11 +78,32 @@ export const AuthProvider = ({ children }) => {
         }
         setIsAuthenticated(true);
         setUsername(data.username);
+        checkMe().catch(() => {});
         return data;
       })
     );
   const signup = (fields) => postAndSignIn("/auth/signup", fields);
   const googleSignIn = (credential) => postAndSignIn("/auth/google", { credential });
+
+  // Sign-in options for the signed-in account. Each throws an Error with the server's message on failure.
+  const sendJson = async (path, method, body) => {
+    const res = await authFetch(`${api_base_url}${path}`, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const error = new Error(res.status === 429 ? "Too many attempts - wait a minute and try again." : data.detail || [].concat(data.new_password || "That did not work.").join(" "));
+      error.fieldErrors = data;
+      throw error;
+    }
+    await checkMe();
+    return data;
+  };
+  const linkGoogle = (credential) => sendJson("/auth/google/link", "POST", { credential });
+  const unlinkGoogle = () => sendJson("/auth/google/link", "DELETE");
+  const setFirstPassword = (newPassword) => sendJson("/auth/set-password", "POST", { new_password: newPassword });
 
   const logout = () =>
     authFetch(`${api_base_url}/auth/logout`, { method: "POST" }).finally(() => {
@@ -147,7 +171,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, username, ready, login, signup, googleSignIn, logout, authFetch, changePassword }}
+      value={{ isAuthenticated, username, ready, signIn, login, signup, googleSignIn, linkGoogle, unlinkGoogle, setFirstPassword, logout, authFetch, changePassword }}
     >
       {children}
     </AuthContext.Provider>
