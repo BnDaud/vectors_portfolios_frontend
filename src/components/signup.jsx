@@ -72,6 +72,13 @@ const Signup = () => {
           <h1 className="text-text_color text-2xl font-bold">Create your portfolio</h1>
           <p className="text-fg/60 text-sm mt-1">Free. You get your own page with one portfolio, a resume and a visitor count.</p>
         </div>
+        <div role="note" className="rounded-xl border-2 border-amber-500 bg-amber-500/15 p-4 text-sm text-fg">
+          <p className="font-bold">Keep it visited</p>
+          <p className="mt-1">
+            If nobody visits your portfolio at least once in a year, your account and its portfolio are deleted
+            automatically. Share your link - each visit from someone else keeps it for another year.
+          </p>
+        </div>
         <GoogleButton text="signup_with" />
         <div className="flex items-center gap-3 text-fg/50 text-xs">
           <span className="h-px flex-1 bg-fg/15" /> or with a username <span className="h-px flex-1 bg-fg/15" />

@@ -11,6 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [ready, setReady] = useState(false);
   // which ways the signed-in account can sign in: {password: bool, google: bool}
   const [signIn, setSignIn] = useState({ password: false, google: false });
+  // when this account is deleted if nobody visits it first (null: never, e.g. the site owner)
+  const [deletesOn, setDeletesOn] = useState(null);
   const csrfToken = useRef(null);
 
   const primeCsrf = () =>
@@ -27,6 +29,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(!!data.authenticated);
         setUsername(data.username || null);
         setSignIn({ password: !!data.has_password, google: !!data.google });
+        setDeletesOn(data.deletes_on || null);
       });
 
   useEffect(() => {
@@ -83,7 +86,8 @@ export const AuthProvider = ({ children }) => {
       })
     );
   const signup = (fields) => postAndSignIn("/auth/signup", fields);
-  const googleSignIn = (credential) => postAndSignIn("/auth/google", { credential });
+  // startFresh: after being told a former account was deleted, make a new one
+  const googleSignIn = (credential, startFresh = false) => postAndSignIn("/auth/google", { credential, ...(startFresh ? { start_fresh: true } : {}) });
 
   // Sign-in options for the signed-in account. Each throws an Error with the server's message on failure.
   const sendJson = async (path, method, body) => {
@@ -171,7 +175,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, username, ready, signIn, login, signup, googleSignIn, linkGoogle, unlinkGoogle, setFirstPassword, logout, authFetch, changePassword }}
+      value={{ isAuthenticated, username, ready, signIn, deletesOn, login, signup, googleSignIn, linkGoogle, unlinkGoogle, setFirstPassword, logout, authFetch, changePassword }}
     >
       {children}
     </AuthContext.Provider>

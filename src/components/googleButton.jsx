@@ -29,11 +29,19 @@ const GoogleButton = ({ text = "continue_with", onCredential }) => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [fresh, setFresh] = useState(null);   // the token, when the person's former account was deleted
   // the auth helpers are new functions every render; the button must not be re-made for that
   const onToken = useRef(null);
   onToken.current = (credential) =>
     (onCredential ? onCredential(credential).then(() => setError("")) : googleSignIn(credential))
       .then((data) => !onCredential && navigate(accountHome(data.username)))
+      .catch((err) => {
+        setError(err.message);
+        if (err.fieldErrors?.can_start_again) setFresh(credential);
+      });
+  const startAgain = () =>
+    googleSignIn(fresh, true)
+      .then((data) => navigate(accountHome(data.username)))
       .catch((err) => setError(err.message));
 
   useEffect(() => {
@@ -66,6 +74,11 @@ const GoogleButton = ({ text = "continue_with", onCredential }) => {
     <div className="flex flex-col items-center gap-2">
       <div ref={box} className="min-h-11" />
       {error && <p className="text-red-500 text-sm text-center">{error}</p>}
+      {fresh && (
+        <button type="button" onClick={startAgain} className="btn-primary text-sm">
+          Start a new account with Google
+        </button>
+      )}
     </div>
   );
 };

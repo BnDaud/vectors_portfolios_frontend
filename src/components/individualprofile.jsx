@@ -4,8 +4,8 @@ import { HiPencil, HiTrash } from "react-icons/hi";
 import { FiLogIn, FiLogOut, FiKey } from "react-icons/fi";
 import { all_profiles_url, api_base_url, site_url } from "./globalvalues";
 import { accountHome, usePageOwner } from "./pageOwner";
-import NotFound404 from "./notfound";
 import SignInOptions from "./signInOptions";
+import { DeletionBanner, MissingAccount } from "./accountNotices";
 import AccountsSection from "./accountsSection";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { useAuth } from "./authContext";
@@ -114,7 +114,7 @@ const OwnerRoot = () => {
       }),
   });
 
-  if (missing) return <NotFound404 />;
+  if (missing) return <MissingAccount username={owner_username} />;
   if (!profile) return <Notyetloader />;
 
   const tracks = profile.tracks || [];
@@ -303,6 +303,7 @@ const OwnerRoot = () => {
         </div>
       </nav>
 
+      <DeletionBanner />
       <div className="mt-5 mx-5 sm:mx-10 pb-10">
         <div className="flex flex-col items-center text-center mb-10">
           <div className="relative mb-4">

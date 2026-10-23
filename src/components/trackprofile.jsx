@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { all_profiles_url, site_url } from "./globalvalues";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
 import { usePageOwner } from "./pageOwner";
+import { DeletionBanner, MissingAccount } from "./accountNotices";
 import Home from "./Sections/home";
 import Portfolio from "./Sections/portfolio";
 import Contact from "./Sections/contact";
@@ -65,13 +66,14 @@ const TrackProfile = ({ username, trackSlug, refs }) => {
       }),
   });
 
-  if (profile === false) return <NotFound404 />;
+  if (profile === false) return <MissingAccount username={username} />;
   if (!profile) return <Notyetloader />;
 
   if (!track) return <NotFound404 />;
 
   return (
     <>
+      <DeletionBanner />
       {canEdit && (
         <div className="flex justify-center mt-5">
           <button

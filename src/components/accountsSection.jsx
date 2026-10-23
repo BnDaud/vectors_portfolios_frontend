@@ -77,6 +77,7 @@ const AccountsSection = () => {
               <span className="text-fg/60 text-xs">
                 {a.portfolios} portfolio{a.portfolios === 1 ? "" : "s"}
               </span>
+              {a.deletes_on && <span className="text-amber-500 text-xs">auto-deletes {day(a.deletes_on)}</span>}
               <span className="text-fg/60 text-xs">signs in with {[a.password && "password", a.google && "Google"].filter(Boolean).join(" + ") || "nothing yet"}</span>
               {!a.protected && (
                 <button
