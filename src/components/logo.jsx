@@ -1,10 +1,13 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTheme } from "./themeContext";
 import { logo } from "./globalvalues";
+import { usePageOwner } from "./pageOwner";
 
 const Logo = ({ fullClassName = "h-11", iconClassName = "h-14", alwaysFull = false }) => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  // home of whoever's pages these are: the site's landing for the owner, /u/<name> for anyone else
+  const { home } = usePageOwner();
   const isDark = theme === "dark";
   const fullSrc = isDark ? logo.fullDark : logo.fullLight;
   const iconSrc = isDark ? logo.iconDark : logo.iconLight;
@@ -12,7 +15,7 @@ const Logo = ({ fullClassName = "h-11", iconClassName = "h-14", alwaysFull = fal
   return (
     <button
       type="button"
-      onClick={() => navigate("/")}
+      onClick={() => navigate(home)}
       className="flex items-center"
       aria-label="Vectored Matrix - go to home"
     >
