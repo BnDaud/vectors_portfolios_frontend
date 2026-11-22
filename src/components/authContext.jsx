@@ -9,8 +9,8 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState(null);
   const [ready, setReady] = useState(false);
-  // which ways the signed-in account can sign in: {password: bool, google: bool}
-  const [signIn, setSignIn] = useState({ password: false, google: false });
+  // which ways the signed-in account can sign in: {password: bool, google: bool, vmatrix: bool}
+  const [signIn, setSignIn] = useState({ password: false, google: false, vmatrix: false });
   // when this account is deleted if nobody visits it first (null: never, e.g. the site owner)
   const [deletesOn, setDeletesOn] = useState(null);
   const csrfToken = useRef(null);
@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
       .then((data) => {
         setIsAuthenticated(!!data.authenticated);
         setUsername(data.username || null);
-        setSignIn({ password: !!data.has_password, google: !!data.google });
+        setSignIn({ password: !!data.has_password, google: !!data.google, vmatrix: !!data.vmatrix });
         setDeletesOn(data.deletes_on || null);
       });
 
@@ -105,9 +105,38 @@ export const AuthProvider = ({ children }) => {
     await checkMe();
     return data;
   };
+  // Vectored Matrix sign-in, with the access token from vmatrix.js. vmSignIn resolves to
+  // {needs_link, suggested_username, name} (not signed in yet) when no portfolio account is linked:
+  // the page then offers vmLink (prove an existing account) or vmCreate (a new one).
+  const vmSignIn = (accessToken) =>
+    primeCsrf().then(() =>
+      fetch(`${api_base_url}/auth/vmatrix`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": csrfToken.current },
+        body: JSON.stringify({ access_token: accessToken }),
+      }).then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(res.status === 429 ? "Too many attempts - please wait a while and try again." : data.detail || "Sign-in failed.");
+        }
+        if (!data.needs_link) {
+          setIsAuthenticated(true);
+          setUsername(data.username);
+          checkMe().catch(() => {});
+        }
+        return data;
+      })
+    );
+  // fields: {username, password} of the old portfolio account, or {credential} from its Google button
+  const vmLink = (accessToken, fields) => postAndSignIn("/auth/vmatrix/link", { access_token: accessToken, ...fields });
+  const vmCreate = (accessToken) => postAndSignIn("/auth/vmatrix/create", { access_token: accessToken });
+
   const linkGoogle = (credential) => sendJson("/auth/google/link", "POST", { credential });
   const unlinkGoogle = () => sendJson("/auth/google/link", "DELETE");
   const setFirstPassword = (newPassword) => sendJson("/auth/set-password", "POST", { new_password: newPassword });
+  const vmConnect = (accessToken) => sendJson("/auth/vmatrix/connect", "POST", { access_token: accessToken });
+  const vmDisconnect = () => sendJson("/auth/vmatrix/connect", "DELETE");
 
   const logout = () =>
     authFetch(`${api_base_url}/auth/logout`, { method: "POST" }).finally(() => {
@@ -175,7 +204,10 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, username, ready, signIn, deletesOn, login, signup, googleSignIn, linkGoogle, unlinkGoogle, setFirstPassword, logout, authFetch, changePassword }}
+      value={{
+        isAuthenticated, username, ready, signIn, deletesOn, login, signup, googleSignIn, linkGoogle, unlinkGoogle, setFirstPassword,
+        vmSignIn, vmLink, vmCreate, vmConnect, vmDisconnect, logout, authFetch, changePassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

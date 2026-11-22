@@ -4,12 +4,14 @@ import { useAuth } from "./authContext";
 import GoogleButton from "./googleButton";
 import { useToast } from "./toastContext";
 import { inputClass } from "./validation";
+import VMSignIn from "./vmSignIn";
+import { vmEnabled, vmForget } from "./vmatrix";
 
 // The signed-in owner's ways in: a password, Google, or both. A password account can
 // connect Google; a Google account can set a password - then either one works.
 // Google can only be disconnected while a password exists, so nobody locks themselves out.
 const SignInOptions = () => {
-  const { signIn, linkGoogle, unlinkGoogle, setFirstPassword } = useAuth();
+  const { signIn, linkGoogle, unlinkGoogle, setFirstPassword, vmConnect, vmDisconnect } = useAuth();
   const { showToast } = useToast();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -34,6 +36,17 @@ const SignInOptions = () => {
   const connect = (credential) =>
     linkGoogle(credential).then(() => showToast("Google connected - you can now sign in with Google too.", "success"));
 
+  const connectVM = (token) =>
+    vmConnect(token).then(() => {
+      vmForget();
+      showToast("Vectored Matrix connected - you can now sign in with it too.", "success");
+    });
+
+  const disconnectVM = () =>
+    vmDisconnect()
+      .then(() => showToast("Vectored Matrix disconnected.", "success"))
+      .catch((err) => showToast(err.message));
+
   const disconnect = () =>
     unlinkGoogle()
       .then(() => showToast("Google disconnected.", "success"))
@@ -45,6 +58,31 @@ const SignInOptions = () => {
       <p className="text-fg/60 text-xs mt-1">Set up both and you can sign in either way.</p>
 
       <div className="mt-4 flex flex-col gap-4">
+        {(vmEnabled || signIn.vmatrix) && (
+          <div>
+            <p className="flex items-center gap-2 text-sm text-fg font-semibold">
+              Vectored Matrix
+              {signIn.vmatrix && (
+                <span className="inline-flex items-center gap-1 text-xs font-normal text-text_color">
+                  <FiCheckCircle aria-hidden="true" /> Connected
+                </span>
+              )}
+            </p>
+            {signIn.vmatrix ? (
+              (signIn.password || signIn.google) && (
+                <button type="button" onClick={disconnectVM} className="mt-2 text-xs text-fg/60 underline hover:text-red-400">
+                  Disconnect Vectored Matrix
+                </button>
+              )
+            ) : (
+              <div className="mt-2">
+                <p className="text-fg/60 text-xs mb-2">The same account you use on Vectored Matrix and MatLearn.</p>
+                <VMSignIn purpose="connect" returnPath={window.location.pathname} onToken={connectVM} submitLabel="Connect" />
+              </div>
+            )}
+          </div>
+        )}
+
         <div>
           <p className="flex items-center gap-2 text-sm text-fg font-semibold">
             Google

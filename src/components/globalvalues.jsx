@@ -14,6 +14,12 @@ export const owner_username = import.meta.env.VITE_OWNER_USERNAME || "Vector";
 export const google_client_id =
   import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "392357048235-9atth9opmrr253qgn45q12h7et8q4bh2.apps.googleusercontent.com";
 
+// "Sign in with Vectored Matrix": the shared Supabase project (its address and anon key are public)
+// and the Vectored Matrix API, which turns a username into the account's email. Empty hides the option.
+export const vm_supabase_url = (import.meta.env.VITE_VM_SUPABASE_URL || "").replace(/\/$/, "");
+export const vm_supabase_anon_key = import.meta.env.VITE_VM_SUPABASE_ANON_KEY || "";
+export const vm_api_url = (import.meta.env.VITE_VM_API_URL || "").replace(/\/$/, "");
+
 // Brand assets - same 4-variant convention (full/icon x light/dark) as the
 // VectoredMatrix SaaS project, hosted in that project's Supabase storage.
 const BRANDING_BASE = "https://jeuuxtzqlrzaqslthhxx.supabase.co/storage/v1/object/public/branding";
