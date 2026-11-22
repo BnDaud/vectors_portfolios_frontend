@@ -4,16 +4,24 @@ import { api_base_url } from "./globalvalues";
 import { useToast } from "./toastContext";
 
 const SWITCHES = [
-  { key: "show", label: "Show on my MatLearn profile", hint: "Learners and schools see this portfolio there." },
-  { key: "recruit", label: "Let MatLearn recruiters see my CV", hint: "MatLearn staff can read it to find tutors. Read-only." },
+  {
+    key: "recruit",
+    label: "Let Vectored Matrix recruiters see my CV",
+    hint: "Recruiters at Vectored Matrix and its companies (MatLearn and more) can read it to hire. Read-only.",
+  },
   { key: "contact", label: "Include my email and phone", hint: "Only with the CV, so recruiters can reach you.", needs: "recruit" },
+  { key: "show_on_matlearn", label: "Show on my MatLearn profile", hint: "Learners and schools on MatLearn see this portfolio." },
 ];
+
+const COMPANY_NAMES = { matlearn: "MatLearn", vectoredmatrix: "Vectored Matrix" };
+const companyName = (key) => COMPANY_NAMES[key] || key;
 
 const when = (iso) => new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
 
-// The owner's choice, portfolio by portfolio, of what MatLearn (Vectored Matrix's learning platform)
-// may see. Nothing is shared until switched on here, and only with Vectored Matrix connected.
-const MatLearnSharing = () => {
+// The owner's choice, portfolio by portfolio, of what the Vectored Matrix group may see: recruiters
+// at any of its companies, and their profile on MatLearn. Nothing is shared until switched on here,
+// and only with Vectored Matrix connected.
+const Sharing = () => {
   const { authFetch, signIn } = useAuth();
   const { showToast } = useToast();
   const [data, setData] = useState(null);
@@ -21,7 +29,7 @@ const MatLearnSharing = () => {
 
   const load = useCallback(
     () =>
-      authFetch(`${api_base_url}/matlearn/sharing`)
+      authFetch(`${api_base_url}/sharing`)
         .then((res) => (res.ok ? res.json() : null))
         .then((body) => body && setData(body))
         .catch(() => {}),
@@ -37,7 +45,7 @@ const MatLearnSharing = () => {
   const toggle = async (portfolio, key) => {
     setSaving(`${portfolio.id}-${key}`);
     try {
-      const res = await authFetch(`${api_base_url}/matlearn/sharing/${portfolio.id}`, {
+      const res = await authFetch(`${api_base_url}/sharing/${portfolio.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ [key]: !portfolio[key] }),
@@ -55,15 +63,15 @@ const MatLearnSharing = () => {
   if (!data || data.portfolios.length === 0) return null;
 
   return (
-    <section aria-labelledby="matlearn-sharing" className="mt-6 w-full max-w-md rounded-xl border border-frame_border bg-frame_bg p-5 text-left">
-      <h2 id="matlearn-sharing" className="text-text_color font-semibold">Share with MatLearn</h2>
+    <section aria-labelledby="vm-sharing" className="mt-6 w-full max-w-md rounded-xl border border-frame_border bg-frame_bg p-5 text-left">
+      <h2 id="vm-sharing" className="text-text_color font-semibold">Share with Vectored Matrix</h2>
       <p className="text-fg/60 text-xs mt-1">
-        MatLearn is Vectored Matrix&apos;s learning platform. You choose what it may see, portfolio by portfolio. Nothing is shared
-        until you switch it on.
+        Get found for jobs at Vectored Matrix and its companies. You choose what they may see, portfolio by portfolio. Nothing is
+        shared until you switch it on.
       </p>
 
       {!data.linked ? (
-        <p className="mt-4 text-sm text-fg/80">Connect Vectored Matrix in Sign-in options first, so MatLearn knows these portfolios are yours.</p>
+        <p className="mt-4 text-sm text-fg/80">Connect Vectored Matrix in Sign-in options first, so the companies know these portfolios are yours.</p>
       ) : (
         <ul className="mt-4 flex flex-col gap-4">
           {data.portfolios.map((p) => (
@@ -94,8 +102,10 @@ const MatLearnSharing = () => {
               {p.recruit && (
                 <p className="mt-2 text-xs text-fg/60">
                   {p.views === 0
-                    ? "No MatLearn recruiter has opened this CV yet."
-                    : `Opened by MatLearn recruiters ${p.views} time${p.views === 1 ? "" : "s"}, last on ${when(p.last_viewed)}.`}
+                    ? "No recruiter has opened this CV yet."
+                    : `Opened by recruiters ${p.views} time${p.views === 1 ? "" : "s"} (${Object.entries(p.views_by_company)
+                        .map(([company, n]) => `${companyName(company)} ${n}`)
+                        .join(", ")}), last on ${when(p.last_viewed)}.`}
                 </p>
               )}
             </li>
@@ -106,4 +116,4 @@ const MatLearnSharing = () => {
   );
 };
 
-export default MatLearnSharing;
+export default Sharing;

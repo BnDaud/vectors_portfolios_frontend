@@ -5,7 +5,7 @@ import { FiLogIn, FiLogOut, FiKey } from "react-icons/fi";
 import { all_profiles_url, api_base_url, site_url } from "./globalvalues";
 import { accountHome, usePageOwner } from "./pageOwner";
 import SignInOptions from "./signInOptions";
-import MatLearnSharing from "./matlearnSharing";
+import Sharing from "./sharing";
 import { DeletionBanner, MissingAccount } from "./accountNotices";
 import AccountsSection from "./accountsSection";
 import { useSeo, personSchema, clip, SITE_NAME } from "./seo";
@@ -369,7 +369,7 @@ const OwnerRoot = () => {
           <p className="text-fg mt-2">Choose a portfolio to view</p>
           <ResumeLauncher tracks={tracks} />
           {canEdit && <SignInOptions />}
-          {canEdit && <MatLearnSharing />}
+          {canEdit && <Sharing />}
           {canEdit && signIn.password && !editingPassword && (
             <button
               type="button"
